@@ -515,7 +515,7 @@ namespace VideoCreatorWPF.ViewModels
                 var app = System.Windows.Application.Current;
                 if (app == null) return;
 
-                app.Dispatcher.Invoke(() =>
+                app.Dispatcher.BeginInvoke(() =>
                 {
                     if (CurrentFrame < TotalFrames)
                     {
@@ -529,7 +529,7 @@ namespace VideoCreatorWPF.ViewModels
                         Stop();
                     }
                 });
-            }, null, 0, 33); // Fixed at 33ms (30fps) for consistent playback speed
+            }, null, 0, 30); // 30ms = 33.3fps (slightly faster for smooth playback)
         }
 
         /// <summary>
