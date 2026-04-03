@@ -115,6 +115,9 @@ namespace VideoCreatorWPF
             // Get speaker ID from character name
             int speakerId = GetSpeakerIdFromCharacterName(characterName);
 
+            // 再生位置を固定（音声生成中に変更されないように）
+            var playheadFrame = timelineVm.CurrentFrame;
+
             // Generate audio asynchronously
             var audioPath = await Services.VoiceVoxService.GenerateAudioFromText(text, speakerId);
 
@@ -131,7 +134,6 @@ namespace VideoCreatorWPF
             }
 
             // Find track where new block won't overlap with existing blocks
-            var playheadFrame = timelineVm.CurrentFrame;
             ViewModels.TimelineTrackViewModel? targetTrack = null;
 
             // Calculate the end frame of the new block we want to add
