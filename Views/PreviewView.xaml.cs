@@ -88,7 +88,7 @@ namespace VideoCreatorWPF.Views
                     if (Window.GetWindow(this) is MainWindow mainWindow &&
                         mainWindow.TimelineViewControl.DataContext is ViewModels.TimelineViewModel timelineVm)
                     {
-                        var totalFrames = (int)(durationSeconds * 30 / 100);
+                        var totalFrames = (int)(durationSeconds * 30 * 100);
                         System.Diagnostics.Debug.WriteLine($"Setting total frames: {totalFrames} (from {durationSeconds}s, 1/100 scale)");
                         timelineVm.SetTotalFrames(totalFrames);
                         mainWindow.TimelineViewControl.UpdateRuler(totalFrames);
@@ -97,7 +97,7 @@ namespace VideoCreatorWPF.Views
                     // Create video block on timeline if pending
                     if (_pendingVideoFilePath != null && _pendingTrackForBlock != null && _pendingTimelineVmForBlock != null && _pendingMainWindowForBlock != null)
                     {
-                        var videoDuration = (int)(durationSeconds * 30 / 100); // 30fps, 1/100 scale
+                        var videoDuration = (int)(durationSeconds * 30 * 100); // 30fps, 1/100 scale
                         System.Diagnostics.Debug.WriteLine($"Creating video block with duration: {videoDuration} frames (1/100 scale)");
 
                         var videoBlock = new Models.TimelineBlock
@@ -249,7 +249,7 @@ namespace VideoCreatorWPF.Views
 
                             if (durationSeconds.HasValue)
                             {
-                                var videoDuration = (int)(durationSeconds.Value * 30 / 100); // 30fps, 1/100 scale
+                                var videoDuration = (int)(durationSeconds.Value * 30 * 100); // 30fps, 1/100 scale
                                 System.Diagnostics.Debug.WriteLine($"Video duration from Shell API: {durationSeconds}s = {videoDuration} frames (1/100 scale)");
 
                                 var videoBlock = new Models.TimelineBlock
