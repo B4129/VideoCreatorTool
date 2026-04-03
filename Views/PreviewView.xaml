@@ -127,7 +127,7 @@
                                 Foreground="White" FontSize="18" Cursor="Hand" ToolTip="最初に戻る"/>
                         <Button x:Name="PlayPauseButton" Content="▶" Click="PlayPauseButton_Click" Width="50" Height="40"
                                 Background="Transparent" BorderThickness="1" BorderBrush="#3f3f46"
-                                Foreground="White" FontSize="18" Cursor="Hand" ToolTip="再生/一時停止"/>
+                                Foreground="White" FontSize="18" Cursor="Hand" ToolTip="再生"/>
                         <Button Content="⏹" Click="StopButton_Click" Width="50" Height="40"
                                 Background="Transparent" BorderThickness="1" BorderBrush="#3f3f46"
                                 Foreground="White" FontSize="18" Cursor="Hand" ToolTip="停止"/>
