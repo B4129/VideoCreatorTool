@@ -135,11 +135,19 @@ namespace VideoCreatorWPF.ViewModels
             }
             else
             {
+                // Clean up MediaPlayer when no video block exists
+                if (_mediaPlayer != null)
+                {
+                    _mediaPlayer.Close();
+                    _mediaPlayer = null;
+                    MediaPlayer = null;
+                }
+
                 _currentVideoPath = null;
                 _currentVideoStartFrame = 0;
                 OnPropertyChanged(nameof(CurrentVideoPath));
                 OnPropertyChanged(nameof(CurrentVideoStartFrame));
-                Debug.WriteLine($"[Preview] No video block found at frame {frame}");
+                Debug.WriteLine($"[Preview] No video block found at frame {frame}, cleared MediaPlayer");
             }
 
             // テキストブロックの更新を通知

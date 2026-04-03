@@ -44,35 +44,6 @@
             </Style.Triggers>
         </Style>
 
-        <Style x:Key="SnapToggleButtonStyle" TargetType="ToggleButton">
-            <Setter Property="Background" Value="#4a4a4a"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Width" Value="90"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Margin" Value="10,0,0,0"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
-                        <Border Background="{TemplateBinding Background}"
-                                CornerRadius="3"
-                                Padding="6,4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsChecked" Value="True">
-                    <Setter Property="Background" Value="#3b82f6"/>
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#5a5a5a"/>
-                </Trigger>
-            </Style.Triggers>
-        </Style>
     </UserControl.Resources>
     <Border Background="#2b2b2b" BorderBrush="#555555" BorderThickness="0,1,0,0">
         <DockPanel>
@@ -106,9 +77,6 @@
                             Width="70" Height="32" FontSize="12"
                             Style="{StaticResource TimelineToolBarButtonStyle}"/>
 
-                    <!-- Snap toggle -->
-                    <ToggleButton Content="🧲 スナップ" IsChecked="{Binding IsSnapEnabled}"
-                                  Style="{StaticResource SnapToggleButtonStyle}"/>
                 </StackPanel>
             </Border>
 
@@ -172,7 +140,7 @@
                                                            ToolTip="{Binding Name}"/>
                                             </Grid>
 
-                                            <!-- Lock toggle (improved: open/closed lock icon with color change) -->
+                                            <!-- Lock toggle (fixed: correct icons and white when locked) -->
                                             <ToggleButton Grid.Column="1" Width="28" Height="28"
                                                           IsChecked="{Binding IsEnabled}"
                                                           Background="#4a4a4a"
@@ -183,17 +151,18 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="ToggleButton">
                                                                     <Border Background="{TemplateBinding Background}"
-                                                                            CornerRadius="4"
                                                                             Width="28" Height="28">
                                                                         <Path Fill="White" Width="16" Height="16" Stretch="Uniform">
                                                                             <Path.Style>
                                                                                 <Style TargetType="Path">
                                                                                     <Style.Triggers>
+                                                                                        <!-- IsEnabled=True -> unlocked (open lock) -->
                                                                                         <DataTrigger Binding="{Binding IsEnabled}" Value="True">
-                                                                                            <Setter Property="Data" Value="M18,8H17V6A5,5 0 0,0 12,1A5,5 0 0,0 7,6V8H6A2,2 0 0,0 4,10V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V10A2,2 0 0,0 18,8M12,17A2,2 0 0,1 10,15A2,2 0 0,1 12,13A2,2 0 0,1 14,15A2,2 0 0,1 12,17M15.73,9H8.27V6C8.27,4.39 9.5,3.12 11.11,3.03C11.32,3.01 11.53,3 11.75,3C12.2,3 12.63,3.07 13.03,3.2C14.31,3.62 15.28,4.7 15.6,6.04C15.68,6.34 15.73,6.66 15.73,7V9Z"/>
-                                                                                        </DataTrigger>
-                                                                                        <DataTrigger Binding="{Binding IsEnabled}" Value="False">
                                                                                             <Setter Property="Data" Value="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>
+                                                                                        </DataTrigger>
+                                                                                        <!-- IsEnabled=False -> locked (closed lock) -->
+                                                                                        <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                                                                            <Setter Property="Data" Value="M18,8H17V6A5,5 0 0,0 12,1A5,5 0 0,0 7,6V8H6A2,2 0 0,0 4,10V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V10A2,2 0 0,0 18,8M12,17A2,2 0 0,1 10,15A2,2 0 0,1 12,13A2,2 0 0,1 14,15A2,2 0 0,1 12,17M15.73,9H8.27V6C8.27,4.39 9.5,3.12 11.11,3.03C11.32,3.01 11.53,3 11.75,3C12.2,3 12.63,3.07 13.03,3.2C14.31,3.62 15.28,4.7 15.6,6.04C15.68,6.34 15.73,6.66 15.73,7V9Z"/>
                                                                                         </DataTrigger>
                                                                                     </Style.Triggers>
                                                                                 </Style>
@@ -204,6 +173,7 @@
                                                             </Setter.Value>
                                                         </Setter>
                                                         <Style.Triggers>
+                                                            <!-- When locked (IsEnabled=False), make background darker -->
                                                             <Trigger Property="IsChecked" Value="False">
                                                                 <Setter Property="Background" Value="#2a2a2a"/>
                                                             </Trigger>
@@ -223,7 +193,6 @@
                                                             <Setter.Value>
                                                                 <ControlTemplate TargetType="Button">
                                                                     <Border Background="{TemplateBinding Background}"
-                                                                            CornerRadius="4"
                                                                             Width="28" Height="28">
                                                                         <Path Data="M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19M8,9H16V19H8V9M15.5,4L14.5,3H9.5L8.5,4H5V6H19V4H15.5Z"
                                                                               Fill="White" Width="16" Height="16"
@@ -296,6 +265,10 @@
                                                                 <Trigger Property="ItemsControl.AlternationIndex" Value="1">
                                                                     <Setter Property="Background" Value="#2b2b2b"/>
                                                                 </Trigger>
+                                                                <!-- White background when locked (IsEnabled=False) -->
+                                                                <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                                                    <Setter Property="Background" Value="#666666"/>
+                                                                </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Grid.Style>
@@ -304,12 +277,6 @@
                                                     <Border BorderBrush="#555555" BorderThickness="0,0,0,1"
                                                             Opacity="{Binding IsVisible, Converter={StaticResource BoolToOpacityConverter}}">
                                                         <Grid>
-                                                            <!-- Background color -->
-                                                            <Grid.Style>
-                                                                <Style TargetType="Grid">
-                                                                    <Setter Property="Background" Value="#333333"/>
-                                                                </Style>
-                                                            </Grid.Style>
 
                                                             <!-- Vertical grid lines -->
                                                             <Canvas x:Name="GridCanvas">
@@ -335,9 +302,19 @@
                                                                 </ItemsControl.ItemsPanel>
                                                                 <ItemsControl.ItemTemplate>
                                                                     <DataTemplate>
-                                                                        <Grid Height="20" MinWidth="80"
-                                                                              Width="{Binding Duration, Converter={StaticResource FramesToWidthConverter}}"
-                                                                              Canvas.Left="{Binding StartFrame, Converter={StaticResource FramesToWidthConverter}}">
+                                                                        <Grid Height="20" MinWidth="80">
+                                                                            <Grid.Width>
+                                                                                <MultiBinding Converter="{StaticResource FramesToWidthConverter}">
+                                                                                    <Binding Path="Duration"/>
+                                                                                    <Binding Path="DataContext.PixelsPerFrame" ElementName="TimelineViewControl"/>
+                                                                                </MultiBinding>
+                                                                            </Grid.Width>
+                                                                            <Canvas.Left>
+                                                                                <MultiBinding Converter="{StaticResource FramesToWidthConverter}">
+                                                                                    <Binding Path="StartFrame"/>
+                                                                                    <Binding Path="DataContext.PixelsPerFrame" ElementName="TimelineViewControl"/>
+                                                                                </MultiBinding>
+                                                                            </Canvas.Left>
 
                                                                             <!-- Main block body -->
                                                                             <Border CornerRadius="3" Padding="4"

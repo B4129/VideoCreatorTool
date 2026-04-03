@@ -23,3 +23,12 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+
+
+# Claude Code
+CLAUDE.md
+docs/*.md
+ss/*.png
+docs/*.png
+AutoSave_*.json
+presets.json

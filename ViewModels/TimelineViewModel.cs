@@ -204,8 +204,8 @@ namespace VideoCreatorWPF.ViewModels
         {
             get
             {
-                // If no blocks, show at least 10 seconds (30fps = 300 frames)
-                var minFrames = 30 * 10; // 10 seconds at 30fps
+                // If no blocks, show at least 15 seconds (30fps = 450 frames)
+                var minFrames = 30 * 15; // 15 seconds at 30fps
 
                 if (_totalFrames.HasValue && _totalFrames.Value > minFrames)
                 {

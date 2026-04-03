@@ -34,6 +34,16 @@ namespace VideoCreatorWPF.Views
 
             // DataContext の変更を監視してイベント購読
             DataContextChanged += TimelineView_DataContextChanged;
+            Loaded += TimelineView_Loaded;
+        }
+
+        private void TimelineView_Loaded(object sender, RoutedEventArgs e)
+        {
+            // 初期表示時にルーラーを更新
+            if (DataContext is ViewModels.TimelineViewModel timelineVm)
+            {
+                UpdateRuler(timelineVm.TotalFrames);
+            }
         }
 
         private void TimelineView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
@@ -513,48 +523,12 @@ namespace VideoCreatorWPF.Views
         // Visual feedback for drag-drop
         private void UpdateDragDropFeedback(int currentY)
         {
-            // Highlight track under cursor during drag
-            var timelineVm = DataContext as ViewModels.TimelineViewModel;
-            if (timelineVm == null) return;
-
-            var trackHeaders = TracksPanel?.Children;
-            if (trackHeaders != null)
-            {
-                for (int i = 0; i < trackHeaders.Count; i++)
-                {
-                    if (trackHeaders[i] is FrameworkElement element)
-                    {
-                        var rect = element.TransformToAncestor(TracksPanel).Transform(new Point(0, 0));
-                        var trackRect = new Rect(rect.X, rect.Y, element.ActualWidth, element.ActualHeight);
-
-                        if (currentY >= rect.Y && currentY < rect.Y + element.ActualHeight)
-                        {
-                            element.Opacity = 1.0;
-                            // Add highlight border (would need additional XAML element)
-                        }
-                        else
-                        {
-                            element.Opacity = 0.6;
-                        }
-                    }
-                }
-            }
+            // TODO: Implement visual feedback when TracksPanel is available
         }
 
         private void ClearDragDropFeedback()
         {
-            // Reset all track opacities
-            var trackHeaders = TracksPanel?.Children;
-            if (trackHeaders != null)
-            {
-                foreach (var child in trackHeaders)
-                {
-                    if (child is FrameworkElement element)
-                    {
-                        element.Opacity = 1.0;
-                    }
-                }
-            }
+            // TODO: Implement visual feedback cleanup
         }
 
         private void DeleteSelectedBlocks(List<TimelineBlock> blocks, ViewModels.TimelineViewModel timelineVm)
@@ -671,57 +645,56 @@ namespace VideoCreatorWPF.Views
         // Show inline edit box for track name
         private void ShowTrackNameEditBox(Grid trackNameGrid, ViewModels.TimelineTrackViewModel trackVm)
         {
-            // Find existing controls
-            var textBlock = trackNameGrid.FindName("TrackNameTextBlock") as TextBlock;
-            var editBox = trackNameGrid.FindName("TrackNameEditBox") as TextBox;
+            // Find existing TextBlock
+            var textBlock = trackNameGrid.Children.OfType<TextBlock>().FirstOrDefault();
+            if (textBlock == null) return;
 
-            if (textBlock == null || editBox == null)
+            // Check if edit box already exists
+            var editBox = trackNameGrid.Children.OfType<TextBox>().FirstOrDefault();
+
+            // Create edit box if it doesn't exist
+            if (editBox == null)
             {
-                // Create edit box dynamically
-                if (editBox == null)
+                editBox = new TextBox
                 {
-                    editBox = new TextBox
-                    {
-                        Text = trackVm.Name,
-                        FontSize = 12,
-                        Padding = new Thickness(2, 4, 2, 4),
-                        VerticalAlignment = VerticalAlignment.Center
-                    };
-
-                    // Store reference
-                    trackNameGrid.RegisterName("TrackNameEditBox", editBox);
-                    trackNameGrid.Children.Add(editBox);
-                }
-
-                editBox.Visibility = Visibility.Visible;
-                editBox.Text = trackVm.Name;
-                editBox.Focus();
-                editBox.SelectAll();
-
-                // Handle lost focus and key down
-                editBox.LostFocus += (s, e) => FinishTrackNameEdit(editBox, trackVm, trackNameGrid);
-                editBox.KeyDown += (s, e) =>
-                {
-                    if (e.Key == System.Windows.Input.Key.Enter)
-                    {
-                        FinishTrackNameEdit(editBox, trackVm, trackNameGrid);
-                    }
-                    else if (e.Key == System.Windows.Input.Key.Escape)
-                    {
-                        CancelTrackNameEdit(editBox, trackNameGrid);
-                    }
+                    Text = trackVm.Name,
+                    FontSize = 12,
+                    Padding = new Thickness(2, 4, 2, 4),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Stretch
                 };
+
+                trackNameGrid.Children.Add(editBox);
             }
             else
             {
-                editBox.Visibility = Visibility.Visible;
                 editBox.Text = trackVm.Name;
-                editBox.Focus();
-                editBox.SelectAll();
             }
 
-            if (textBlock != null)
-                textBlock.Visibility = Visibility.Collapsed;
+            // Show edit box, hide text block
+            editBox.Visibility = Visibility.Visible;
+            textBlock.Visibility = Visibility.Collapsed;
+            editBox.Focus();
+            editBox.SelectAll();
+
+            // Handle lost focus and key down
+            editBox.LostFocus -= (s, e) => FinishTrackNameEdit(editBox, trackVm, trackNameGrid);
+            editBox.LostFocus += (s, e) => FinishTrackNameEdit(editBox, trackVm, trackNameGrid);
+
+            editBox.KeyDown -= (s, e) => TrackEditBox_KeyDown(s, e, editBox, trackVm, trackNameGrid);
+            editBox.KeyDown += (s, e) => TrackEditBox_KeyDown(s, e, editBox, trackVm, trackNameGrid);
+        }
+
+        private void TrackEditBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e, TextBox editBox, ViewModels.TimelineTrackViewModel trackVm, Grid trackNameGrid)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                FinishTrackNameEdit(editBox, trackVm, trackNameGrid);
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                CancelTrackNameEdit(editBox, trackNameGrid);
+            }
         }
 
         private void FinishTrackNameEdit(TextBox editBox, ViewModels.TimelineTrackViewModel trackVm, Grid trackNameGrid)

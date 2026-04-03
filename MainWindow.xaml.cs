@@ -172,8 +172,9 @@ namespace VideoCreatorWPF
                 characterName = selectedItem.Content.ToString();
             }
 
-            // Get speaker ID from character name
+            // Get speaker ID and color from character name
             int speakerId = GetSpeakerIdFromCharacterName(characterName);
+            string characterColor = GetCharacterColor(characterName);
 
             // 再生位置を固定（音声生成中に変更されないように）
             var playheadFrame = timelineVm.CurrentFrame;
@@ -241,14 +242,14 @@ namespace VideoCreatorWPF
                 audioTrack = timelineVm.Tracks.Last();
             }
 
-            // Create text block (yellow-green)
+            // Create text block with character-specific color
             var textBlock = new TimelineBlock
             {
                 CharacterId = Guid.NewGuid(),
                 StartFrame = playheadFrame,
                 Duration = blockDuration,
                 Text = text,
-                BackgroundColor = "#7CFC00", // Yellow-green for text
+                BackgroundColor = characterColor, // Character-specific color
                 Type = BlockType.Dialogue,
                 FontFamily = _currentFontFamily,
                 FontSize = _currentFontSize,
@@ -299,6 +300,18 @@ namespace VideoCreatorWPF
             };
         }
 
+        // Get background color for character (for text blocks)
+        private string GetCharacterColor(string name)
+        {
+            return name switch
+            {
+                "ずんだもん" => "#7CFC00",      // 黄緑
+                "四国めたん" => "#FF69B4",      // ピンク
+                "春日部つむぎ" => "#87CEEB",   // 水色
+                _ => "#7CFC00"
+            };
+        }
+
         private void OpenSettings_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.OpenSettingsCommand.Execute(null);
@@ -332,6 +345,9 @@ namespace VideoCreatorWPF
 
         private void SubtitleInput_TextChanged(object sender, TextChangedEventArgs e)
         {
+            // Prevent calling during initialization
+            if (AutoCompletePopup == null || SubtitleInput == null) return;
+
             var text = SubtitleInput.Text;
             var caretIndex = SubtitleInput.CaretIndex;
 
@@ -412,12 +428,16 @@ namespace VideoCreatorWPF
 
         private void HideSuggestions()
         {
-            AutoCompletePopup.IsOpen = false;
+            if (AutoCompletePopup != null)
+            {
+                AutoCompletePopup.IsOpen = false;
+            }
             _suggestionStartIndex = -1;
         }
 
         private void SubtitleInput_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            // Handle autocomplete popup when open
             if (AutoCompletePopup.IsOpen)
             {
                 if (e.Key == Key.Tab)
@@ -434,6 +454,22 @@ namespace VideoCreatorWPF
                     HideSuggestions();
                     e.Handled = true;
                 }
+                return;
+            }
+
+            // Handle Enter key for adding subtitle
+            if (e.Key == Key.Enter)
+            {
+                // Check if Shift or Ctrl is pressed (for newline)
+                if ((Keyboard.Modifiers & (ModifierKeys.Shift | ModifierKeys.Control)) != 0)
+                {
+                    // Allow newline - do nothing special
+                    return;
+                }
+
+                // Enter alone: trigger add subtitle
+                e.Handled = true;
+                AddSubtitle_Click(null, null);
             }
         }
 
