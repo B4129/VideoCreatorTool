@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace VideoCreatorWPF.Models
@@ -8,8 +11,23 @@ namespace VideoCreatorWPF.Models
     /// インラインアイコン（テキスト→画像置換）の定義
     /// [tag] または :tag: 形式のテキストを画像に置換するためのルール
     /// </summary>
-    public class IconAlias : ViewModelBase
+    public class IconAlias : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         private string _searchKey = "";
         private string _imagePath = "";
         private double _heightScale = 1.0;
@@ -85,7 +103,7 @@ namespace VideoCreatorWPF.Models
         /// 正規表現パターン（内部使用）
         /// </summary>
         [System.Text.Json.Serialization.JsonIgnore]
-        public Regex Pattern { get; private set; }
+        public Regex? Pattern { get; private set; }
 
         /// <summary>
         /// パターンをコンパイル
@@ -118,8 +136,7 @@ namespace VideoCreatorWPF.Models
         /// </summary>
         public Match GetMatch(string text)
         {
-            if (Pattern == null) return null;
-            return Pattern.Match(text);
+            return Pattern?.Match(text) ?? throw new InvalidOperationException("Pattern not compiled");
         }
     }
 

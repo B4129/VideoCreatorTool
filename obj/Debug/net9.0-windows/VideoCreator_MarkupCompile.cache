@@ -10,11 +10,11 @@ none
 false
 TRACE;DEBUG;HOT_RELOAD;DEBUG;NET;NET9_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER;WINDOWS7_0_OR_GREATER
 C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\App.xaml
-122020760142
+15-1463525760
 
-48398842801
+55-1775061711
 204-827713357
-MainWindow.xaml;Views\BGMMgmtPanel.xaml;Views\CharacterListView.xaml;Views\ExportDialog.xaml;Views\MediaPoolView.xaml;Views\PreviewView.xaml;Views\ProjectSettingsDialog.xaml;Views\SettingsDialog.xaml;Views\ShortcutsDialog.xaml;Views\SubtitlePropertiesDialog.xaml;Views\SubtitlePropertiesView.xaml;Views\TimelineView.xaml;
+MainWindow.xaml;Views\BGMMgmtPanel.xaml;Views\CharacterListView.xaml;Views\CharacterSettingsDialog.xaml;Views\ExportDialog.xaml;Views\IconDictionaryDialog.xaml;Views\MediaPoolView.xaml;Views\PreviewView.xaml;Views\ProjectSettingsDialog.xaml;Views\SettingsDialog.xaml;Views\ShortcutsDialog.xaml;Views\SubtitlePropertiesDialog.xaml;Views\SubtitlePropertiesView.xaml;Views\TimelineView.xaml;Views\VoiceSynthesisDialog.xaml;
 
 False
 

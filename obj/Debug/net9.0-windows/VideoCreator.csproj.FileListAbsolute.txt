@@ -100,3 +100,9 @@ C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\bin\Debug\net9.0-windo
 C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\bin\Debug\net9.0-windows\VideoCreator.pdb
 C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\obj\Debug\net9.0-windows\VideoCreator.genruntimeconfig.cache
 C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\obj\Debug\net9.0-windows\ref\VideoCreator.dll
+C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\obj\Debug\net9.0-windows\Views\CharacterSettingsDialog.baml
+C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\obj\Debug\net9.0-windows\Views\IconDictionaryDialog.baml
+C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\obj\Debug\net9.0-windows\Views\VoiceSynthesisDialog.baml
+C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\obj\Debug\net9.0-windows\Views\CharacterSettingsDialog.g.cs
+C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\obj\Debug\net9.0-windows\Views\IconDictionaryDialog.g.cs
+C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF\obj\Debug\net9.0-windows\Views\VoiceSynthesisDialog.g.cs
