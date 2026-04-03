@@ -443,8 +443,82 @@ namespace VideoCreatorWPF.Views
         {
             if (e.ClickCount == 2 && sender is Grid grid && grid.DataContext is ViewModels.TimelineTrackViewModel trackVm)
             {
-                trackVm.StartRename();
+                // Show edit box directly
+                ShowTrackNameEditBox(grid, trackVm);
             }
+        }
+
+        // Show inline edit box for track name
+        private void ShowTrackNameEditBox(Grid trackNameGrid, ViewModels.TimelineTrackViewModel trackVm)
+        {
+            // Find existing controls
+            var textBlock = trackNameGrid.FindName("TrackNameTextBlock") as TextBlock;
+            var editBox = trackNameGrid.FindName("TrackNameEditBox") as TextBox;
+
+            if (textBlock == null || editBox == null)
+            {
+                // Create edit box dynamically
+                if (editBox == null)
+                {
+                    editBox = new TextBox
+                    {
+                        Text = trackVm.Name,
+                        FontSize = 12,
+                        Padding = new Thickness(2, 4, 2, 4),
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+
+                    // Store reference
+                    trackNameGrid.RegisterName("TrackNameEditBox", editBox);
+                    trackNameGrid.Children.Add(editBox);
+                }
+
+                editBox.Visibility = Visibility.Visible;
+                editBox.Text = trackVm.Name;
+                editBox.Focus();
+                editBox.SelectAll();
+
+                // Handle lost focus and key down
+                editBox.LostFocus += (s, e) => FinishTrackNameEdit(editBox, trackVm, trackNameGrid);
+                editBox.KeyDown += (s, e) =>
+                {
+                    if (e.Key == System.Windows.Input.Key.Enter)
+                    {
+                        FinishTrackNameEdit(editBox, trackVm, trackNameGrid);
+                    }
+                    else if (e.Key == System.Windows.Input.Key.Escape)
+                    {
+                        CancelTrackNameEdit(editBox, trackNameGrid);
+                    }
+                };
+            }
+            else
+            {
+                editBox.Visibility = Visibility.Visible;
+                editBox.Text = trackVm.Name;
+                editBox.Focus();
+                editBox.SelectAll();
+            }
+
+            if (textBlock != null)
+                textBlock.Visibility = Visibility.Collapsed;
+        }
+
+        private void FinishTrackNameEdit(TextBox editBox, ViewModels.TimelineTrackViewModel trackVm, Grid trackNameGrid)
+        {
+            if (!string.IsNullOrWhiteSpace(editBox.Text))
+            {
+                trackVm.Name = editBox.Text;
+            }
+            CancelTrackNameEdit(editBox, trackNameGrid);
+        }
+
+        private void CancelTrackNameEdit(TextBox editBox, Grid trackNameGrid)
+        {
+            editBox.Visibility = Visibility.Collapsed;
+            var textBlock = trackNameGrid.FindName("TrackNameTextBlock") as TextBlock;
+            if (textBlock != null)
+                textBlock.Visibility = Visibility.Visible;
         }
 
         // Rename button click
