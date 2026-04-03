@@ -87,7 +87,7 @@ namespace VideoCreatorWPF.ViewModels
                         // 現在のフレーム位置から再生（30fps換算）
                         var offsetSeconds = (CurrentFrame - block.StartFrame) / 30.0;
                         _playingAudioBlocks.Add(block.Id);
-                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath, offsetSeconds);
+                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath, offsetSeconds, block.PlaybackSpeed);
 
                         System.Diagnostics.Debug.WriteLine($"[Audio] Starting audio block at frame {CurrentFrame}: {block.AudioPath} (offset: {offsetSeconds:F2}s)");
                     }
@@ -553,7 +553,7 @@ namespace VideoCreatorWPF.ViewModels
                     {
                         // 音声ファイルを最初から再生
                         _playingAudioBlocks.Add(block.Id);
-                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath, 0);
+                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath, 0, block.PlaybackSpeed);
 
                         System.Diagnostics.Debug.WriteLine($"[Audio] Playing audio block at frame {CurrentFrame}: {block.AudioPath}");
                     }
@@ -608,6 +608,9 @@ namespace VideoCreatorWPF.ViewModels
             _playTimer?.Dispose();
             _playTimer = null;
             CurrentFrame = 0;
+
+            // Stop all audio playback
+            Services.AudioService.StopAll();
             _playingAudioBlocks.Clear(); // 停止時に再生中リストをクリア
         }
 

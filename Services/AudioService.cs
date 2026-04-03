@@ -11,11 +11,11 @@ namespace VideoCreatorWPF.Services
     {
         private static ConcurrentDictionary<string, MediaPlayer> _players = new();
 
-        public static async Task PlayAudioAsync(string audioPath, double startPositionSeconds = 0)
+        public static async Task PlayAudioAsync(string audioPath, double startPositionSeconds = 0, double playbackSpeed = 1.0)
         {
             try
             {
-                Debug.WriteLine($"[Audio] PlayAudioAsync called: {audioPath}");
+                Debug.WriteLine($"[Audio] PlayAudioAsync called: {audioPath} (speed: {playbackSpeed})");
 
                 if (!File.Exists(audioPath))
                 {
@@ -45,6 +45,10 @@ namespace VideoCreatorWPF.Services
                 player.MediaOpened += (s, e) =>
                 {
                     Debug.WriteLine($"[Audio] MediaOpened, duration: {player.NaturalDuration.TimeSpan}");
+
+                    // Set playback speed
+                    player.SpeedRatio = playbackSpeed;
+                    Debug.WriteLine($"[Audio] Set playback speed to {playbackSpeed}");
 
                     // Seek to start position if specified
                     if (startPositionSeconds > 0)
