@@ -20,6 +20,7 @@ namespace VideoCreatorWPF
         private System.Threading.Timer? _autoSaveTimer;
         private string? _currentProjectPath;
         private const int AutoSaveInterval = 30000; // 30 seconds
+        private TimelineViewModel? _timelineViewModel;
 
         public MainWindow()
         {
@@ -37,24 +38,27 @@ namespace VideoCreatorWPF
                 {
                     if (ViewModel.CurrentProjectViewModel != null)
                     {
-                        var timelineVm = new TimelineViewModel(ViewModel.CurrentProjectViewModel);
-                        TimelineViewControl.DataContext = timelineVm;
+                        _timelineViewModel = new TimelineViewModel(ViewModel.CurrentProjectViewModel);
+                        TimelineViewControl.DataContext = _timelineViewModel;
                         PreviewViewControl.DataContext = new PreviewViewModel(ViewModel.CurrentProjectViewModel);
 
                         // Subscribe to CurrentFrame changes to update playhead
-                        timelineVm.PropertyChanged += (s, args) =>
+                        _timelineViewModel.PropertyChanged += (s, args) =>
                         {
                             if (args.PropertyName == nameof(TimelineViewModel.CurrentFrame))
                             {
                                 TimelineViewControl.RefreshPlayhead();
                             }
                         };
+
+                        // Update Space key binding to use TimelineViewModel's PlayCommand
+                        UpdateSpaceKeyBinding();
                     }
                 }
             });
             ViewModel.PropertyChanged += propertyChanged;
 
-            // キーボードショートカットを設定
+            // キーボードショートカットを設定（初期設定）
             InputBindings.Add(new InputBinding(ViewModel.NewProjectCommand, new KeyGesture(Key.N, ModifierKeys.Control)));
             InputBindings.Add(new InputBinding(ViewModel.OpenProjectCommand, new KeyGesture(Key.O, ModifierKeys.Control)));
             InputBindings.Add(new InputBinding(ViewModel.SaveProjectCommand, new KeyGesture(Key.S, ModifierKeys.Control)));
@@ -468,6 +472,22 @@ namespace VideoCreatorWPF
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Component screenshot error: {ex.Message}");
+            }
+        }
+
+        // スペースキーのバインディングをTimelineViewModelのPlayCommandに更新
+        private void UpdateSpaceKeyBinding()
+        {
+            if (_timelineViewModel != null)
+            {
+                // 既存のバインディングをクリア
+                InputBindings.Clear();
+
+                // 再度すべてのキーバインディングを設定（SpaceはTimelineViewModelを使用）
+                InputBindings.Add(new InputBinding(ViewModel.NewProjectCommand, new KeyGesture(Key.N, ModifierKeys.Control)));
+                InputBindings.Add(new InputBinding(ViewModel.OpenProjectCommand, new KeyGesture(Key.O, ModifierKeys.Control)));
+                InputBindings.Add(new InputBinding(ViewModel.SaveProjectCommand, new KeyGesture(Key.S, ModifierKeys.Control)));
+                InputBindings.Add(new InputBinding(_timelineViewModel.PlayCommand, new KeyGesture(Key.Space)));
             }
         }
 
