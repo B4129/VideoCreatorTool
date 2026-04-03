@@ -529,7 +529,7 @@ namespace VideoCreatorWPF.ViewModels
                         Stop();
                     }
                 });
-            }, null, 0, (int)(1000.0 / _project.FrameRate));
+            }, null, 0, 33); // Fixed at 33ms (30fps) for consistent playback speed
         }
 
         /// <summary>
