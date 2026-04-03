@@ -84,6 +84,12 @@ namespace VideoCreatorWPF
                             }
                         };
 
+                        // Subscribe to block selection changes
+                        _timelineViewModel.BlockSelected += (s, block) =>
+                        {
+                            ViewModel.BlockProperties.UpdateFromBlock(block);
+                        };
+
                         // Subscribe to PixelsPerFrame changes to update ruler on zoom
                         _timelineViewModel.PropertyChanged += (s, args) =>
                         {
@@ -160,6 +166,7 @@ namespace VideoCreatorWPF
 
             // 再生位置を固定（音声生成中に変更されないように）
             var playheadFrame = timelineVm.CurrentFrame;
+            System.Diagnostics.Debug.WriteLine($"[AddSubtitle] Adding subtitle at frame: {playheadFrame}");
 
             // Generate audio asynchronously
             var audioPath = await Services.VoiceVoxService.GenerateAudioFromText(text, speakerId);
@@ -239,6 +246,7 @@ namespace VideoCreatorWPF
             };
 
             // Add text block to text track
+            System.Diagnostics.Debug.WriteLine($"[AddSubtitle] Adding text block to track: {textTrack.Name}, startFrame={playheadFrame}, duration={blockDuration}");
             textTrack.Items.Add(textBlock);
 
             // If audio was generated, create audio block on audio track with SAME duration
@@ -249,7 +257,7 @@ namespace VideoCreatorWPF
                     CharacterId = textBlock.CharacterId,
                     StartFrame = playheadFrame,
                     Duration = blockDuration, // Same duration as text block
-                    Text = text,
+                    Text = "", // No text for audio blocks - text is on the dialogue block
                     AudioPath = audioPath,
                     BackgroundColor = "#FF4500", // Red for audio
                     Type = BlockType.Audio,
@@ -292,6 +300,13 @@ namespace VideoCreatorWPF
             dialog.ShowDialog();
         }
 
+        private void IconDictionary_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Views.IconDictionaryDialog();
+            dialog.Owner = this;
+            dialog.ShowDialog();
+        }
+
         /// <summary>
         /// SRT字幕ファイルのインポート
         /// </summary>
@@ -301,7 +316,7 @@ namespace VideoCreatorWPF
             {
                 Title = "SRT字幕ファイルを選択",
                 Filter = "SRT字幕ファイル (*.srt)|*.srt|すべてのファイル (*.*)|*.*",
-                InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                InitialDirectory = AppDomain.CurrentDomain.BaseDirectory
             };
 
             if (dialog.ShowDialog() == true)
@@ -379,7 +394,7 @@ namespace VideoCreatorWPF
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(renderTarget));
 
-                var ssDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\ss";
+                var ssDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ss");
                 if (!Directory.Exists(ssDir))
                 {
                     Directory.CreateDirectory(ssDir);
@@ -431,8 +446,8 @@ namespace VideoCreatorWPF
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(renderTarget));
 
-                // docsフォルダに保存
-                var docsDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\docs";
+                // アプリケーションディレクトリ内のdocsフォルダに保存
+                var docsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "docs");
                 if (!Directory.Exists(docsDir))
                 {
                     Directory.CreateDirectory(docsDir);
@@ -459,7 +474,7 @@ namespace VideoCreatorWPF
         {
             try
             {
-                var docsDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\docs";
+                var docsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "docs");
                 if (!Directory.Exists(docsDir))
                 {
                     Directory.CreateDirectory(docsDir);
@@ -503,7 +518,7 @@ namespace VideoCreatorWPF
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(renderTarget));
 
-                var docsDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\docs";
+                var docsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "docs");
                 var filePath = Path.Combine(docsDir, $"{fileName}.png");
 
                 using (var fs = new FileStream(filePath, FileMode.Create))

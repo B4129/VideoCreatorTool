@@ -20,6 +20,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="320"/>
             <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="280"/>
         </Grid.ColumnDefinitions>
 
         <!-- Menu bar -->
@@ -48,6 +49,7 @@
                     <MenuItem Header="ツール(T)" Padding="10,5">
                         <MenuItem Header="プロジェクト設定(_P)" Command="{Binding OpenProjectSettingsCommand}"/>
                         <Separator/>
+                        <MenuItem Header="インラインアイコン辞書(_I)" Click="IconDictionary_Click"/>
                         <MenuItem Header="ショートカット設定(_K)" Click="Shortcuts_Click"/>
                         <MenuItem Header="設定(_G)" Command="{Binding OpenSettingsCommand}"/>
                     </MenuItem>
@@ -88,6 +90,239 @@
                 <views:TimelineView x:Name="TimelineViewControl"/>
             </Border>
         </Grid>
+
+        <!-- Property panel (right side) -->
+        <Border Grid.Row="1" Grid.Column="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1,0,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="12">
+                    <!-- Header -->
+                    <TextBlock Text="プロパティ" Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="14" FontWeight="Bold" Margin="0,0,0,12"/>
+
+                    <!-- No selection message -->
+                    <TextBlock Text="ブロックを選択してください" Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="12" Margin="0,20,0,0"
+                               Visibility="{Binding BlockProperties.HasSelection, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+
+                    <!-- Property content (visible when block selected) -->
+                    <StackPanel Visibility="{Binding BlockProperties.HasSelection, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <!-- Common properties -->
+                        <TextBlock Text="基本設定" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="11" Margin="0,0,0,6"/>
+
+                        <StackPanel Margin="0,0,0,10">
+                            <TextBlock Text="名前" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                            <TextBox Text="{Binding BlockProperties.BlockName, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="28" FontSize="11" Padding="6,4"
+                                     Background="{StaticResource SurfaceBrush}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderBrush="{StaticResource BorderBrush}"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,0,10">
+                            <TextBlock Text="開始フレーム" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                            <TextBox Text="{Binding BlockProperties.StartFrame}" Height="28" FontSize="11" Padding="6,4"
+                                     Background="{StaticResource SurfaceBrush}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderBrush="{StaticResource BorderBrush}"/>
+                        </StackPanel>
+
+                        <StackPanel Margin="0,0,0,10">
+                            <TextBlock Text="長さ（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                            <TextBox Text="{Binding BlockProperties.Duration}" Height="28" FontSize="11" Padding="6,4"
+                                     Background="{StaticResource SurfaceBrush}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderBrush="{StaticResource BorderBrush}"/>
+                        </StackPanel>
+
+                        <!-- Text block properties -->
+                        <StackPanel Visibility="{Binding BlockProperties.IsTextBlock, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Separator Margin="0,5,0,10"/>
+                            <TextBlock Text="テキスト設定" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="11" Margin="0,0,0,6"/>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="セリフ" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BlockProperties.TextContent, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="50" FontSize="11" Padding="6,4" TextWrapping="Wrap" AcceptsReturn="True"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フォント" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <ComboBox ItemsSource="{Binding FontFamilies}"
+                                          SelectedItem="{Binding BlockProperties.FontFamily}"
+                                          Height="28" FontSize="11"
+                                          Background="{StaticResource SurfaceBrush}"
+                                          Foreground="{StaticResource TextPrimaryBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フォントサイズ" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BlockProperties.FontSize}" Height="28" FontSize="11" Padding="6,4"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フォント色" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBox Text="{Binding BlockProperties.FontColor}" Width="80" Height="28" FontSize="11" Padding="6,4"
+                                             Background="{StaticResource SurfaceBrush}"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             BorderBrush="{StaticResource BorderBrush}"/>
+                                    <Border Width="28" Height="28" Margin="4,0,0,0"
+                                            Background="{Binding BlockProperties.FontColor}"
+                                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="X位置 (%)" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding BlockProperties.PositionX}" Height="28" FontSize="11" Padding="6,4"
+                                             Background="{StaticResource SurfaceBrush}"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             BorderBrush="{StaticResource BorderBrush}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Y位置 (%)" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                    <TextBox Text="{Binding BlockProperties.PositionY}" Height="28" FontSize="11" Padding="6,4"
+                                             Background="{StaticResource SurfaceBrush}"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             BorderBrush="{StaticResource BorderBrush}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フェードイン（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="6,4"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フェードアウト（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="6,4"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Audio/Video block properties -->
+                        <StackPanel Visibility="{Binding BlockProperties.IsAudioBlock, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Separator Margin="0,5,0,10"/>
+                            <TextBlock Text="音声設定" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="11" Margin="0,0,0,6"/>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="音量" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <Slider Value="{Binding BlockProperties.Volume}" Minimum="0" Maximum="2" TickFrequency="0.1"
+                                        Height="24"/>
+                                <TextBlock Text="{Binding BlockProperties.Volume, StringFormat={}{0:F1}}" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="10" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="再生速度" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <Slider Value="{Binding BlockProperties.PlaybackSpeed}" Minimum="0.25" Maximum="4" TickFrequency="0.25"
+                                        Height="24"/>
+                                <TextBlock Text="{Binding BlockProperties.PlaybackSpeed, StringFormat={}{0:F2}x}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="10" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フェードイン（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="6,4"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フェードアウト（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="6,4"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Video block properties (same structure as audio) -->
+                        <StackPanel Visibility="{Binding BlockProperties.IsVideoBlock, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Separator Margin="0,5,0,10"/>
+                            <TextBlock Text="映像設定" Foreground="{StaticResource TextSecondaryBrush}"
+                                       FontSize="11" Margin="0,0,0,6"/>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="音量" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <Slider Value="{Binding BlockProperties.Volume}" Minimum="0" Maximum="2" TickFrequency="0.1"
+                                        Height="24"/>
+                                <TextBlock Text="{Binding BlockProperties.Volume, StringFormat={}{0:F1}}" Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="10" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="再生速度" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <Slider Value="{Binding BlockProperties.PlaybackSpeed}" Minimum="0.25" Maximum="4" TickFrequency="0.25"
+                                        Height="24"/>
+                                <TextBlock Text="{Binding BlockProperties.PlaybackSpeed, StringFormat={}{0:F2}x}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="10" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="不透明度" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <Slider Value="{Binding BlockProperties.Opacity}" Minimum="0" Maximum="1" TickFrequency="0.05"
+                                        Height="24"/>
+                                <TextBlock Text="{Binding BlockProperties.Opacity, StringFormat={}{0:F2}}"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           FontSize="10" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="ループ再生" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <CheckBox IsChecked="{Binding BlockProperties.Loop}" Content="有効"
+                                          Foreground="{StaticResource TextPrimaryBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フェードイン（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="6,4"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"/>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,10">
+                                <TextBlock Text="フェードアウト（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
+                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="6,4"
+                                         Background="{StaticResource SurfaceBrush}"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderBrush}"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Apply button -->
+                        <Button Content="適用" Command="{Binding BlockProperties.ApplyCommand}"
+                                Height="36" FontSize="12" Margin="0,16,0,0"
+                                Background="{StaticResource PrimaryBrush}" Foreground="White"
+                                BorderThickness="0" Cursor="Hand"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
 
         <!-- Status log bar -->
         <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="15,6">

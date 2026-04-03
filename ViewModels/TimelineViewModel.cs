@@ -23,6 +23,8 @@ namespace VideoCreatorWPF.ViewModels
         private const double MinPixelsPerFrame = 0.1;
         private const double MaxPixelsPerFrame = 5.0;
 
+        public event Action<object, TimelineBlock>? BlockSelected;
+
         public TimelineViewModel(ProjectViewModel project)
         {
             _project = project;
@@ -64,9 +66,60 @@ namespace VideoCreatorWPF.ViewModels
         }
 
         /// <summary>
+        /// 現在のフレーム位置にある音声/動画ブロックを探して再生（再生開始時のみ）
+        /// </summary>
+        private void StartAudioBlocksAtCurrentFrame()
+        {
+            foreach (var track in _tracks)
+            {
+                foreach (var block in track.Items)
+                {
+                    // 音声ブロックで、現在のフレームがブロック内かチェック
+                    if (block.Type == BlockType.Audio &&
+                        CurrentFrame >= block.StartFrame &&
+                        CurrentFrame < block.StartFrame + block.Duration &&
+                        !string.IsNullOrEmpty(block.AudioPath) &&
+                        !_playingAudioBlocks.Contains(block.Id))
+                    {
+                        // 現在のフレーム位置から再生（30fps換算）
+                        var offsetSeconds = (CurrentFrame - block.StartFrame) / 30.0;
+                        _playingAudioBlocks.Add(block.Id);
+                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath, offsetSeconds);
+
+                        System.Diagnostics.Debug.WriteLine($"[Audio] Starting audio block at frame {CurrentFrame}: {block.AudioPath} (offset: {offsetSeconds:F2}s)");
+                    }
+
+                    // 動画ブロックで、現在のフレームがブロック内かチェック
+                    if (block.Type == BlockType.Video &&
+                        CurrentFrame >= block.StartFrame &&
+                        CurrentFrame < block.StartFrame + block.Duration &&
+                        !string.IsNullOrEmpty(block.AudioPath) &&
+                        !_playingAudioBlocks.Contains(block.Id))
+                    {
+                        _playingAudioBlocks.Add(block.Id);
+                        System.Diagnostics.Debug.WriteLine($"[Video] Starting video block at frame {CurrentFrame}: {block.AudioPath} (block start: {block.StartFrame})");
+
+                        // MainWindow経由でプレビューの動画プレイヤーに通知
+                        VideoBlockStarted?.Invoke(this, new VideoBlockEventArgs
+                        {
+                            VideoPath = block.AudioPath,
+                            StartFrame = block.StartFrame,
+                            Duration = block.Duration
+                        });
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// 動画ブロック開始イベント
         /// </summary>
         public event EventHandler<VideoBlockEventArgs>? VideoBlockStarted;
+
+        /// <summary>
+        /// プレイヘッド位置変更イベント
+        /// </summary>
+        public event EventHandler<int>? PlayheadPositionChanged;
 
         public bool CanUndo => _undoStack.Count > 0;
         public bool CanRedo => _redoStack.Count > 0;
@@ -109,6 +162,7 @@ namespace VideoCreatorWPF.ViewModels
                     OnPropertyChanged(nameof(CurrentFrame));
                     OnPropertyChanged(nameof(CurrentPositionText));
                     OnPropertyChanged(nameof(DurationText));
+                    PlayheadPositionChanged?.Invoke(this, value);
                 }
             }
         }
@@ -333,6 +387,7 @@ namespace VideoCreatorWPF.ViewModels
             {
                 SelectedBlocks.Add(block);
                 block.IsSelected = true;
+                BlockSelected?.Invoke(this, block);
             }
         }
 
@@ -376,6 +431,12 @@ namespace VideoCreatorWPF.ViewModels
             IsPlaying = true;
             _playingAudioBlocks.Clear(); // 再生開始時にクリア
 
+            // 再生開始時に、現在のフレーム位置にある音声/動画ブロックを探して再生
+            StartAudioBlocksAtCurrentFrame();
+
+            // 再生開始時にプレイヘッド位置変更イベントを発火（スクロール用）
+            PlayheadPositionChanged?.Invoke(this, CurrentFrame);
+
             _playTimer = new System.Threading.Timer(_ =>
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -400,6 +461,13 @@ namespace VideoCreatorWPF.ViewModels
         /// </summary>
         private void CheckAndPlayAudioBlocksAtCurrentFrame()
         {
+            // Ensure at least one track exists when playing
+            if (_tracks.Count == 0)
+            {
+                _project.Tracks.Add(new Models.TimelineTrack { Name = "トラック1", BlockColor = GetRandomColor() });
+                _tracks.Add(new TimelineTrackViewModel(_project.Tracks[0]));
+            }
+
             foreach (var track in _tracks)
             {
                 foreach (var block in track.Items)
@@ -410,9 +478,9 @@ namespace VideoCreatorWPF.ViewModels
                         !string.IsNullOrEmpty(block.AudioPath) &&
                         !_playingAudioBlocks.Contains(block.Id))
                     {
-                        // 音声ファイルを非同期で再生
-                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath);
+                        // 音声ファイルを最初から再生
                         _playingAudioBlocks.Add(block.Id);
+                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath, 0);
 
                         System.Diagnostics.Debug.WriteLine($"[Audio] Playing audio block at frame {CurrentFrame}: {block.AudioPath}");
                     }
@@ -429,8 +497,9 @@ namespace VideoCreatorWPF.ViewModels
                     if (block.Type == BlockType.Video && !string.IsNullOrEmpty(block.AudioPath))
                     {
                         // 動画ブロックの開始位置に来たら通知
-                        if (block.StartFrame == CurrentFrame)
+                        if (block.StartFrame == CurrentFrame && !_playingAudioBlocks.Contains(block.Id))
                         {
+                            _playingAudioBlocks.Add(block.Id);
                             System.Diagnostics.Debug.WriteLine($"[Video] Video block started at frame {CurrentFrame}: {block.AudioPath}");
 
                             // MainWindow経由でプレビューの動画プレイヤーに通知
@@ -441,12 +510,18 @@ namespace VideoCreatorWPF.ViewModels
                                 Duration = block.Duration
                             });
                         }
+
+                        // 動画ブロックの再生終了をクリーニング
+                        if (_playingAudioBlocks.Contains(block.Id) && CurrentFrame >= block.StartFrame + block.Duration)
+                        {
+                            _playingAudioBlocks.Remove(block.Id);
+                        }
                     }
                 }
             }
         }
 
-        private void Pause()
+        public void Pause()
         {
             IsPlaying = false;
             _playTimer?.Dispose();

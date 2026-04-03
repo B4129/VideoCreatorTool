@@ -17,7 +17,7 @@ namespace VideoCreatorWPF.ViewModels
         public SettingsViewModel()
         {
             _settings = new AppSettings();
-            SaveCommand = new RelayCommand(async _ => await Save());
+            SaveCommand = new RelayCommand(async _ => await SaveInternal());
             CancelCommand = new RelayCommand(_ => Close());
             BrowseVoiceVoxCommand = new RelayCommand(_ => BrowseVoiceVoxPath());
             BrowseOutputCommand = new RelayCommand(_ => BrowseOutputDirectory());
@@ -129,7 +129,7 @@ namespace VideoCreatorWPF.ViewModels
             _isLoading = false;
         }
 
-        private async System.Threading.Tasks.Task Save()
+        private async System.Threading.Tasks.Task SaveInternal()
         {
             if (!_isLoading)
             {

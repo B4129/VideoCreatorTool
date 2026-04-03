@@ -9,8 +9,7 @@ namespace VideoCreatorWPF.Services
     public class SettingsService
     {
         private static readonly string SettingsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VideoCreatorWPF",
+            AppDomain.CurrentDomain.BaseDirectory,
             "settings.json");
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -46,7 +45,7 @@ namespace VideoCreatorWPF.Services
             _cachedSettings = new AppSettings
             {
                 VoiceVoxPath = FindVoiceVoxPath(),
-                OutputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                OutputDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "output"),
                 Theme = "Dark",
                 AutoSave = true,
                 AutoSaveInterval = 5

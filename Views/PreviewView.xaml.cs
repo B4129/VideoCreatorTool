@@ -48,7 +48,7 @@ namespace VideoCreatorWPF.Views
                                 VideoPlayer.BeginInit();
                                 VideoPlayer.Source = new Uri(vm.CurrentVideoPath);
                                 VideoPlayer.LoadedBehavior = MediaState.Manual;
-                                VideoPlayer.UnloadedBehavior = MediaState.Stop;
+                                VideoPlayer.UnloadedBehavior = MediaState.Manual;
                                 VideoPlayer.EndInit();
 
                                 Debug.WriteLine($"[Preview] Video loaded, waiting for MediaOpened");
@@ -208,14 +208,39 @@ namespace VideoCreatorWPF.Views
                 System.Diagnostics.Debug.WriteLine($"[Preview] Error in VideoPlayer_MediaOpened: {ex.Message}");
             }
 
-            // Start position update timer
-            _positionTimer = new System.Threading.Timer(_ =>
+            // Start position update timer only during playback
+            StartPositionTimer();
+        }
+
+        private void StartPositionTimer()
+        {
+            _positionTimer?.Dispose();
+            _positionTimer = new System.Threading.Timer(state =>
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                try
                 {
-                    UpdatePosition();
-                });
+                    var app = System.Windows.Application.Current;
+                    if (app == null) return;
+
+                    app.Dispatcher.Invoke(() =>
+                    {
+                        if (VideoPlayer != null && _isPlaying)
+                        {
+                            UpdatePosition();
+                        }
+                    });
+                }
+                catch (TaskCanceledException)
+                {
+                    // Ignore - app shutting down
+                }
             }, null, 0, 100);
+        }
+
+        private void StopPositionTimer()
+        {
+            _positionTimer?.Dispose();
+            _positionTimer = null;
         }
 
         private void VideoPlayer_MediaEnded(object sender, RoutedEventArgs e)
@@ -224,6 +249,7 @@ namespace VideoCreatorWPF.Views
             VideoPlayer.Position = TimeSpan.Zero;
             _isPlaying = false;
             PlayPauseButton.Content = "▶";
+            StopPositionTimer();
             if (DataContext is ViewModels.PreviewViewModel viewModel)
             {
                 viewModel.IsPlaying = false;
@@ -232,7 +258,7 @@ namespace VideoCreatorWPF.Views
 
         private void UpdatePosition()
         {
-            if (VideoPlayer.Source != null && VideoPlayer.NaturalDuration.HasTimeSpan)
+            if (VideoPlayer != null && VideoPlayer.Source != null && VideoPlayer.NaturalDuration.HasTimeSpan)
             {
                 var positionSeconds = VideoPlayer.Position.TotalSeconds;
 
@@ -244,16 +270,13 @@ namespace VideoCreatorWPF.Views
 
                 // Slider removed - seek bar moved to TimelineView
 
-                // Update timeline playhead
+                // Update timeline playhead (without auto-scroll during playback)
                 if (Window.GetWindow(this) is MainWindow mainWindow &&
                     mainWindow.TimelineViewControl.DataContext is ViewModels.TimelineViewModel timelineVm)
                 {
                     var fps = 30.0;
                     var currentFrame = (int)(positionSeconds * fps);
                     timelineVm.CurrentFrame = currentFrame;
-
-                    // Auto-scroll timeline to keep playhead visible
-                    mainWindow.TimelineViewControl.ScrollToFrame(currentFrame);
                 }
             }
         }
@@ -419,6 +442,12 @@ namespace VideoCreatorWPF.Views
             VideoPlayer.Position = TimeSpan.Zero;
             _isPlaying = false;
             PlayPauseButton.Content = "▶";
+            StopPositionTimer();
+            if (DataContext is ViewModels.PreviewViewModel viewModel)
+            {
+                viewModel.CurrentPosition = 0;
+                viewModel.UpdatePositionFromTimer(0);
+            }
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
@@ -427,6 +456,12 @@ namespace VideoCreatorWPF.Views
             VideoPlayer.Position = TimeSpan.Zero;
             _isPlaying = false;
             PlayPauseButton.Content = "▶";
+            StopPositionTimer();
+            if (DataContext is ViewModels.PreviewViewModel viewModel)
+            {
+                viewModel.CurrentPosition = 0;
+                viewModel.UpdatePositionFromTimer(0);
+            }
         }
 
         private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
@@ -440,6 +475,7 @@ namespace VideoCreatorWPF.Views
                 VideoPlayer.Play();
                 _isPlaying = true;
                 PlayPauseButton.Content = "⏸";
+                StartPositionTimer();
                 return;
             }
 
@@ -449,12 +485,14 @@ namespace VideoCreatorWPF.Views
                 VideoPlayer.Pause();
                 _isPlaying = false;
                 PlayPauseButton.Content = "▶";
+                StopPositionTimer();
             }
             else
             {
                 VideoPlayer.Play();
                 _isPlaying = true;
                 PlayPauseButton.Content = "⏸";
+                StartPositionTimer();
             }
         }
     }

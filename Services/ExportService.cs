@@ -167,56 +167,118 @@ namespace VideoCreatorWPF.Services
                     // Handle text blocks (Dialogue/Subtitle)
                     if (block.Type == BlockType.Dialogue || block.Type == BlockType.Subtitle)
                     {
-                        var escapedText = block.Text.Replace("'", @"'\''").Replace("[", @"\[").Replace("]", @"\]");
-
                         // Calculate position from percentage to pixels
                         var xPos = (block.TextPositionX / 100.0) * width;
                         var yPos = (block.TextPositionY / 100.0) * height;
 
-                        // Build drawtext filter options
-                        var drawtextOpts = new StringBuilder();
-                        drawtextOpts.Append($"text='{escapedText}'");
-                        drawtextOpts.Append($":x={xPos}");
-                        drawtextOpts.Append($":y={yPos}");
-                        drawtextOpts.Append($":fontsize={block.FontSize}");
-                        drawtextOpts.Append($":fontcolor={block.TextColor}");
+                        // Parse text for inline icons
+                        var parsedResult = InlineTextParser.Parse(block.CharacterId, block.Text);
 
-                        // Text outline (border_width + border_color)
-                        if (block.TextOutlineWidth > 0)
+                        // If text contains inline icons, render as separate layers
+                        if (parsedResult.HasIcons)
                         {
-                            drawtextOpts.Append($":border_width={block.TextOutlineWidth}");
-                            drawtextOpts.Append($":border_color={block.TextOutlineColor}");
-                        }
+                            // Build base text (text without icons)
+                            var baseText = string.Join("", parsedResult.Elements.Where(e => !e.IsIcon).Select(e => e.Text));
+                            var escapedBaseText = baseText.Replace("'", @"'\''").Replace("[", @"\[").Replace("]", @"\]");
 
-                        // Shadow (shadow_x + shadow_y + shadow_color)
-                        if (block.HasShadow)
+                            // First layer: base text
+                            var drawtextOpts = new StringBuilder();
+                            drawtextOpts.Append($"text='{escapedBaseText}'");
+                            drawtextOpts.Append($":x={xPos}");
+                            drawtextOpts.Append($":y={yPos}");
+                            drawtextOpts.Append($":fontsize={block.FontSize}");
+                            drawtextOpts.Append($":fontcolor={block.TextColor}");
+
+                            if (block.TextOutlineWidth > 0)
+                            {
+                                drawtextOpts.Append($":border_width={block.TextOutlineWidth}");
+                                drawtextOpts.Append($":border_color={block.TextOutlineColor}");
+                            }
+
+                            if (block.HasShadow)
+                            {
+                                drawtextOpts.Append(":shadow_x=2");
+                                drawtextOpts.Append(":shadow_y=2");
+                                drawtextOpts.Append(":shadow_color=#000000");
+                            }
+
+                            var enableExpr = $"between(t\\,{relativeStart}\\,{relativeStart + blockDuration})";
+
+                            if (block.FadeInFrames > 0)
+                            {
+                                var fadeInStart = relativeStart;
+                                var fadeInEnd = relativeStart + block.FadeInFrames / (double)frameRate;
+                                drawtextOpts.Append($":alpha='if(lt(t\\,{fadeInEnd})\\, (t-{fadeInStart})/({fadeInEnd}-{fadeInStart})\\, 1)'");
+                            }
+
+                            if (block.FadeOutFrames > 0)
+                            {
+                                var fadeOutStart = relativeStart + blockDuration - block.FadeOutFrames / (double)frameRate;
+                                var fadeOutEnd = relativeStart + blockDuration;
+                                drawtextOpts.Append($":alpha='if(gte(t\\,{fadeOutStart})\\, (1-(t-{fadeOutStart})/({fadeOutEnd}-{fadeOutStart}))\\, 1)'");
+                            }
+
+                            sb.Append($"{currentSource}drawtext={drawtextOpts.ToString()}:enable='{enableExpr}'[temp];");
+                            currentSource = "[temp]";
+
+                            // Additional layers: inline icons
+                            var iconPositions = InlineIconRenderer.GetIconPositions(
+                                parsedResult.Elements, xPos, yPos, block.FontSize, width);
+
+                            foreach (var (iconPath, iconX, iconY, iconWidth, iconHeight) in iconPositions)
+                            {
+                                var escapedIconPath = iconPath.Replace("\\", "\\\\").Replace("'", @"'\''");
+                                var iconEnableExpr = $"between(t\\,{relativeStart}\\,{relativeStart + blockDuration})";
+
+                                sb.Append($"{currentSource}movie='{escapedIconPath}',scale={iconWidth}:{iconHeight}[icon];");
+                                sb.Append($"{currentSource}[icon]overlay=x={iconX}:y={iconY}:enable='{iconEnableExpr}'[temp];");
+                                currentSource = "[temp]";
+                            }
+                        }
+                        else
                         {
-                            drawtextOpts.Append(":shadow_x=2");
-                            drawtextOpts.Append(":shadow_y=2");
-                            drawtextOpts.Append(":shadow_color=#000000");
+                            // No icons, use simple drawtext
+                            var escapedText = block.Text.Replace("'", @"'\''").Replace("[", @"\[").Replace("]", @"\]");
+
+                            var drawtextOpts = new StringBuilder();
+                            drawtextOpts.Append($"text='{escapedText}'");
+                            drawtextOpts.Append($":x={xPos}");
+                            drawtextOpts.Append($":y={yPos}");
+                            drawtextOpts.Append($":fontsize={block.FontSize}");
+                            drawtextOpts.Append($":fontcolor={block.TextColor}");
+
+                            if (block.TextOutlineWidth > 0)
+                            {
+                                drawtextOpts.Append($":border_width={block.TextOutlineWidth}");
+                                drawtextOpts.Append($":border_color={block.TextOutlineColor}");
+                            }
+
+                            if (block.HasShadow)
+                            {
+                                drawtextOpts.Append(":shadow_x=2");
+                                drawtextOpts.Append(":shadow_y=2");
+                                drawtextOpts.Append(":shadow_color=#000000");
+                            }
+
+                            var enableExpr = $"between(t\\,{relativeStart}\\,{relativeStart + blockDuration})";
+
+                            if (block.FadeInFrames > 0)
+                            {
+                                var fadeInStart = relativeStart;
+                                var fadeInEnd = relativeStart + block.FadeInFrames / (double)frameRate;
+                                drawtextOpts.Append($":alpha='if(lt(t\\,{fadeInEnd})\\, (t-{fadeInStart})/({fadeInEnd}-{fadeInStart})\\, 1)'");
+                            }
+
+                            if (block.FadeOutFrames > 0)
+                            {
+                                var fadeOutStart = relativeStart + blockDuration - block.FadeOutFrames / (double)frameRate;
+                                var fadeOutEnd = relativeStart + blockDuration;
+                                drawtextOpts.Append($":alpha='if(gte(t\\,{fadeOutStart})\\, (1-(t-{fadeOutStart})/({fadeOutEnd}-{fadeOutStart}))\\, 1)'");
+                            }
+
+                            sb.Append($"{currentSource}drawtext={drawtextOpts.ToString()}:enable='{enableExpr}'[temp];");
+                            currentSource = "[temp]";
                         }
-
-                        // Enable with fade effects
-                        var enableExpr = $"between(t\\,{relativeStart}\\,{relativeStart + blockDuration})";
-
-                        // Fade in
-                        if (block.FadeInFrames > 0)
-                        {
-                            var fadeInStart = relativeStart;
-                            var fadeInEnd = relativeStart + block.FadeInFrames / (double)frameRate;
-                            drawtextOpts.Append($":alpha='if(lt(t\\,{fadeInEnd})\\, (t-{fadeInStart})/({fadeInEnd}-{fadeInStart})\\, 1)'");
-                        }
-
-                        // Fade out
-                        if (block.FadeOutFrames > 0)
-                        {
-                            var fadeOutStart = relativeStart + blockDuration - block.FadeOutFrames / (double)frameRate;
-                            var fadeOutEnd = relativeStart + blockDuration;
-                            drawtextOpts.Append($":alpha='if(gte(t\\,{fadeOutStart})\\, (1-(t-{fadeOutStart})/({fadeOutEnd}-{fadeOutStart}))\\, 1)'");
-                        }
-
-                        sb.Append($"{currentSource}drawtext={drawtextOpts.ToString()}:enable='{enableExpr}'[temp];");
-                        currentSource = "[temp]";
                     }
                     // Handle image blocks - scale to fit and overlay
                     else if (block.Type == BlockType.Image && !string.IsNullOrEmpty(block.AudioPath) && File.Exists(block.AudioPath))
@@ -585,7 +647,7 @@ namespace VideoCreatorWPF.Services
 
         public static string GetOutputDirectory(AppSettings settings)
         {
-            return settings.OutputDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            return settings.OutputDirectory ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "output");
         }
     }
 }

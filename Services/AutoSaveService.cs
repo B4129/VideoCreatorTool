@@ -54,6 +54,20 @@ namespace VideoCreatorWPF.Services
             }
         }
 
+        public void UpdateSettings(AppSettings settings)
+        {
+            _settings = settings;
+            _timer.Interval = settings.AutoSaveInterval * 60 * 1000;
+            if (settings.AutoSave)
+            {
+                _timer.Start();
+            }
+            else
+            {
+                _timer.Stop();
+            }
+        }
+
         public void SetCurrentProject(VideoProject? project)
         {
             _currentProject = project;
@@ -83,7 +97,7 @@ namespace VideoCreatorWPF.Services
 
         private string GetBackupPath(VideoProject project)
         {
-            var directory = _settings.OutputDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            var directory = _settings.OutputDirectory ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "backups");
             var backupDir = Path.Combine(directory, "AutoBackups");
 
             if (!Directory.Exists(backupDir))

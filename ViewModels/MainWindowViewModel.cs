@@ -24,24 +24,20 @@ namespace VideoCreatorWPF.ViewModels
         private VideoProject? _currentProject;
         private ProjectViewModel? _currentProjectViewModel;
         private MediaPoolViewModel? _mediaPoolViewModel;
+        private BlockPropertyViewModel _blockProperties = new();
         private AppSettings _settings = new();
 
         public MainWindowViewModel()
         {
+            _settings = new AppSettings();
             _autoSaveService = new AutoSaveService(_settings);
             _autoSaveService.AutoSaved += (path) =>
             {
                 StatusMessage = $"自動保存完了: {System.IO.Path.GetFileName(path)}";
             };
 
-            Task.Run(async () =>
-            {
-                _settings = await SettingsService.LoadSettings();
-                await InitializeVoiceVox();
-            });
-
             CheckVoiceVoxStatusCommand = new RelayCommand(async _ => await CheckStatusAsync());
-            OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
+            OpenSettingsCommand = new RelayCommand(async _ => await OpenSettingsInternal());
             OpenProjectSettingsCommand = new RelayCommand(_ => OpenProjectSettings(), _ => _currentProject != null);
             NewProjectCommand = new RelayCommand(_ => NewProject());
             OpenProjectCommand = new RelayCommand(async _ => await OpenProject());
@@ -52,10 +48,18 @@ namespace VideoCreatorWPF.ViewModels
             PauseCommand = new RelayCommand(_ => Pause());
             StopCommand = new RelayCommand(_ => Stop());
 
-            // Create default project after UI is ready
-            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            // Initialize settings and create default project after UI is ready
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(async () =>
             {
+                // Load settings first
+                _settings = await SettingsService.LoadSettings();
+                _autoSaveService.UpdateSettings(_settings);
+
+                // Then create default project
                 NewProject();
+
+                // Finally initialize VOICEVOX
+                await InitializeVoiceVox();
             }));
         }
 
@@ -95,6 +99,12 @@ namespace VideoCreatorWPF.ViewModels
             set => SetProperty(ref _mediaPoolViewModel, value);
         }
 
+        public BlockPropertyViewModel BlockProperties
+        {
+            get => _blockProperties;
+            set => SetProperty(ref _blockProperties, value);
+        }
+
         public ICommand CheckVoiceVoxStatusCommand { get; }
         public ICommand OpenSettingsCommand { get; }
         public ICommand OpenProjectSettingsCommand { get; }
@@ -107,7 +117,7 @@ namespace VideoCreatorWPF.ViewModels
         public ICommand PauseCommand { get; }
         public ICommand StopCommand { get; }
 
-        private async Task InitializeVoiceVox()
+        private async System.Threading.Tasks.Task InitializeVoiceVox()
         {
             IsVoiceVoxStarting = true;
             StatusMessage = "VOICEVOXを起動中...";
@@ -126,7 +136,7 @@ namespace VideoCreatorWPF.ViewModels
             StatusMessage = isConnected ? "VOICEVOX接続済み" : "VOICEVOX未接続";
         }
 
-        private void OpenSettings()
+        private async System.Threading.Tasks.Task OpenSettingsInternal()
         {
             var dialog = new SettingsDialog();
             var viewModel = new ViewModels.SettingsViewModel();
@@ -134,6 +144,11 @@ namespace VideoCreatorWPF.ViewModels
             dialog.DataContext = viewModel;
             dialog.Owner = Application.Current.MainWindow;
             dialog.ShowDialog();
+
+            // Reload settings after dialog closes
+            _settings = await SettingsService.LoadSettings();
+            _autoSaveService.UpdateSettings(_settings);
+
             StatusMessage = "設定を閉じました";
         }
 
@@ -162,21 +177,23 @@ namespace VideoCreatorWPF.ViewModels
         {
             var project = ProjectService.CreateNewProject();
 
-            // Create 20 default tracks
-            for (int i = 1; i <= 20; i++)
+            // デフォルトで5つのトラックを作成
+            for (int i = 0; i < 5; i++)
             {
-                project.Tracks.Add(new Models.TimelineTrack
+                var track = new Models.TimelineTrack
                 {
-                    Name = $"トラック{i}",
+                    Name = $"トラック{i + 1}",
                     BlockColor = GetRandomColor()
-                });
+                };
+                project.Tracks.Add(track);
             }
 
             CurrentProject = project;
             CurrentProjectViewModel = new ProjectViewModel(project);
             MediaPoolViewModel = new MediaPoolViewModel(project);
             _autoSaveService.SetCurrentProject(project);
-            StatusMessage = $"新規プロジェクト作成: {project.Name} (20トラック)";
+
+            StatusMessage = $"新規プロジェクト作成: {project.Name}";
             _eventBus.Publish(new ProjectCreatedEvent(project.Name));
         }
 

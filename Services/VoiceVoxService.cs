@@ -139,6 +139,21 @@ namespace VideoCreatorWPF.Services
 
         public static async Task<string?> GenerateAudioFromText(string text, int speakerId = 2)
         {
+            return await GenerateAudioWithParams(text, speakerId, 0, 1.0, 0.0, 1.0);
+        }
+
+        /// <summary>
+        /// パラメータを指定して音声を生成
+        /// </summary>
+        /// <param name="text">セリフテキスト</param>
+        /// <param name="speakerId">話者ID</param>
+        /// <param name="styleId">スタイルID</param>
+        /// <param name="speed">話速 (0.5-2.0)</param>
+        /// <param name="pitch">音高 (-0.15-0.15)</param>
+        /// <param name="intonation">抑揚 (0.0-2.0)</param>
+        /// <returns>生成されたWAVファイルのパス</returns>
+        public static async Task<string?> GenerateAudioWithParams(string text, int speakerId = 2, int styleId = 0, double speed = 1.0, double pitch = 0.0, double intonation = 1.0)
+        {
             try
             {
                 if (!await CheckHealth())
@@ -147,7 +162,7 @@ namespace VideoCreatorWPF.Services
                     return null;
                 }
 
-                // Step 1: Create audio query
+                // Step 1: Create audio query with parameters
                 var queryUrl = $"{VoiceVoxUrl}/audio_query?text={Uri.EscapeDataString(text)}&speaker={speakerId}";
                 var queryResponse = await HttpClient.PostAsync(queryUrl, null);
                 if (!queryResponse.IsSuccessStatusCode)
@@ -156,11 +171,44 @@ namespace VideoCreatorWPF.Services
                     return null;
                 }
 
+                // Parse query JSON and modify parameters
                 var queryJson = await queryResponse.Content.ReadAsStringAsync();
 
-                // Step 2: Synthesize audio
-                var synthesisUrl = $"{VoiceVoxUrl}/synthesis?speaker={speakerId}";
-                var content = new StringContent(queryJson, System.Text.Encoding.UTF8, "application/json");
+                // Modify audio query parameters using simple string manipulation
+                // VOICEVOX query format: {"accentPhrases":[...],"speedScale":1.0,"pitchScale":0.0,"intonationScale":1.0,...}
+                var modifiedJson = queryJson;
+
+                // Replace speedScale
+                if (modifiedJson.Contains("\"speedScale\""))
+                {
+                    modifiedJson = System.Text.RegularExpressions.Regex.Replace(
+                        modifiedJson,
+                        "\"speedScale\":[0-9.]+",
+                        $"\"speedScale\":{speed}");
+                }
+
+                // Replace pitchScale
+                if (modifiedJson.Contains("\"pitchScale\""))
+                {
+                    modifiedJson = System.Text.RegularExpressions.Regex.Replace(
+                        modifiedJson,
+                        "\"pitchScale\":[-0-9.]+",
+                        $"\"pitchScale\":{pitch}");
+                }
+
+                // Replace intonationScale
+                if (modifiedJson.Contains("\"intonationScale\""))
+                {
+                    modifiedJson = System.Text.RegularExpressions.Regex.Replace(
+                        modifiedJson,
+                        "\"intonationScale\":[0-9.]+",
+                        $"\"intonationScale\":{intonation}");
+                }
+
+                // Step 2: Synthesize audio with modified query
+                var synthesisSpeakerId = styleId > 0 ? styleId : speakerId;
+                var synthesisUrl = $"{VoiceVoxUrl}/synthesis?speaker={synthesisSpeakerId}";
+                var content = new StringContent(modifiedJson, System.Text.Encoding.UTF8, "application/json");
                 var synthesisResponse = await HttpClient.PostAsync(synthesisUrl, content);
                 if (!synthesisResponse.IsSuccessStatusCode)
                 {
@@ -175,7 +223,7 @@ namespace VideoCreatorWPF.Services
                     await synthesisResponse.Content.CopyToAsync(fs);
                 }
 
-                Debug.WriteLine($"Audio generated: {tempFile}");
+                Debug.WriteLine($"Audio generated with params (speed={speed}, pitch={pitch}, intonation={intonation}): {tempFile}");
                 return tempFile;
             }
             catch (Exception ex)

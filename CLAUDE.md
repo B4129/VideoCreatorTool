@@ -49,3 +49,8 @@ git push origin develop
 ## スクリーンショット
 - 機能追加時はdocsフォルダにスクリーンショットを保存
 - README.mdに機能ごとのスクリーンショットを追加
+
+## ビルド・起動ルール
+- ビルド前は必ず起動中のアプリケーションを停止する
+- `taskkill /F /IM VideoCreator.exe` または `taskkill /F /IM dotnet.exe` でプロセスを終了
+- その後 `dotnet run` で再起動

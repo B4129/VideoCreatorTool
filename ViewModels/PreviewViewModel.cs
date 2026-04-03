@@ -62,8 +62,8 @@ namespace VideoCreatorWPF.ViewModels
                 {
                     foreach (var block in track.Items)
                     {
-                        // 動画・音声ブロックはスキップ
-                        if (block.Type == BlockType.Video || block.Type == BlockType.Audio) continue;
+                        // Dialogue blocks only (skip audio, video, and other block types)
+                        if (block.Type != BlockType.Dialogue) continue;
 
                         // プレイヘッド位置にテキストがあるかチェック
                         if (_currentFrame >= block.StartFrame && _currentFrame < block.StartFrame + block.Duration)
@@ -107,15 +107,19 @@ namespace VideoCreatorWPF.ViewModels
 
             if (videoBlock != null)
             {
+                _currentVideoPath = videoBlock.AudioPath;
+                _currentVideoStartFrame = videoBlock.StartFrame;
+                OnPropertyChanged(nameof(CurrentVideoPath));
+                OnPropertyChanged(nameof(CurrentVideoStartFrame));
                 Debug.WriteLine($"[Preview] Setting CurrentVideoPath: {videoBlock.AudioPath}");
-                CurrentVideoPath = videoBlock.AudioPath;
-                CurrentVideoStartFrame = videoBlock.StartFrame;
             }
             else
             {
+                _currentVideoPath = null;
+                _currentVideoStartFrame = 0;
+                OnPropertyChanged(nameof(CurrentVideoPath));
+                OnPropertyChanged(nameof(CurrentVideoStartFrame));
                 Debug.WriteLine($"[Preview] No video block found at frame {frame}");
-                CurrentVideoPath = null;
-                CurrentVideoStartFrame = 0;
             }
 
             // テキストブロックの更新を通知

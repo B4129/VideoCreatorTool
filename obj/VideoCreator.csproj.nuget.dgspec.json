@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\neko3\\Desktop\\agent\\動画作成ツール\\VideoCreatorWPF\\VideoCreator.csproj": {}
+    "C:\\Users\\neko3\\Desktop\\agent\\VideoCreator\\VideoCreatorWPF\\VideoCreator.csproj": {}
   },
   "projects": {
-    "C:\\Users\\neko3\\Desktop\\agent\\動画作成ツール\\VideoCreatorWPF\\VideoCreator.csproj": {
+    "C:\\Users\\neko3\\Desktop\\agent\\VideoCreator\\VideoCreatorWPF\\VideoCreator.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\neko3\\Desktop\\agent\\動画作成ツール\\VideoCreatorWPF\\VideoCreator.csproj",
+        "projectUniqueName": "C:\\Users\\neko3\\Desktop\\agent\\VideoCreator\\VideoCreatorWPF\\VideoCreator.csproj",
         "projectName": "VideoCreator",
-        "projectPath": "C:\\Users\\neko3\\Desktop\\agent\\動画作成ツール\\VideoCreatorWPF\\VideoCreator.csproj",
+        "projectPath": "C:\\Users\\neko3\\Desktop\\agent\\VideoCreator\\VideoCreatorWPF\\VideoCreator.csproj",
         "packagesPath": "C:\\Users\\neko3\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\neko3\\Desktop\\agent\\動画作成ツール\\VideoCreatorWPF\\obj\\",
+        "outputPath": "C:\\Users\\neko3\\Desktop\\agent\\VideoCreator\\VideoCreatorWPF\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\neko3\\AppData\\Roaming\\NuGet\\NuGet.Config"

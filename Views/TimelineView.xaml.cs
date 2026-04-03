@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -21,6 +22,8 @@ namespace VideoCreatorWPF.Views
         private ResizeEdge _resizeEdge;
         private int _resizeStartDuration;
         private bool _isDraggingPlayhead;
+        private bool _isUserScrolling;
+        private System.Windows.Threading.DispatcherTimer? _scrollTimer;
         private ViewModels.TimelineTrackViewModel? _dragSourceTrack;
         private ViewModels.TimelineTrackViewModel? _dragTargetTrack;
 
@@ -28,6 +31,32 @@ namespace VideoCreatorWPF.Views
         {
             InitializeComponent();
             UpdatePlayheadPosition();
+
+            // DataContext の変更を監視してイベント購読
+            DataContextChanged += TimelineView_DataContextChanged;
+        }
+
+        private void TimelineView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.OldValue is ViewModels.TimelineViewModel oldVm)
+            {
+                oldVm.PlayheadPositionChanged -= OnPlayheadPositionChanged;
+            }
+
+            if (e.NewValue is ViewModels.TimelineViewModel newVm)
+            {
+                newVm.PlayheadPositionChanged += OnPlayheadPositionChanged;
+            }
+        }
+
+        private void OnPlayheadPositionChanged(object? sender, int frame)
+        {
+            // 再生中は常にプレイヘッド位置に自動スクロール
+            if (sender is ViewModels.TimelineViewModel vm && vm.IsPlaying)
+            {
+                // ユーザースクロール中でも再生中は強制的にスクロール
+                ScrollToFrame(frame);
+            }
         }
 
         // Sync vertical scrolling between headers and timeline
@@ -37,10 +66,29 @@ namespace VideoCreatorWPF.Views
             {
                 HeadersScrollViewer.ScrollToVerticalOffset(TimelineScrollViewer.VerticalOffset);
             }
+
+            // Detect manual horizontal scrolling
+            if (e.HorizontalChange != 0)
+            {
+                _isUserScrolling = true;
+                _scrollTimer?.Stop();
+                _scrollTimer = new System.Windows.Threading.DispatcherTimer();
+                _scrollTimer.Interval = TimeSpan.FromMilliseconds(500);
+                _scrollTimer.Tick += (s, args) =>
+                {
+                    _isUserScrolling = false;
+                    _scrollTimer.Stop();
+                    _scrollTimer = null;
+                };
+                _scrollTimer.Start();
+            }
         }
 
         private void Block_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            // プレイヘッドのドラッグ中はブロックのドラッグを開始しない
+            if (_isDraggingPlayhead) return;
+
             if (sender is not Border border || border.DataContext is not TimelineBlock block) return;
 
             var parentGrid = border.Parent as Grid;
@@ -64,16 +112,83 @@ namespace VideoCreatorWPF.Views
             _dragStartFrame = block.StartFrame;
             _dragSourceTrack = trackVm;
             _dragTargetTrack = trackVm;
-            _isDragging = true;
             _isResizing = false;
             _resizeEdge = ResizeEdge.None;
-            border.CaptureMouse();
+
+            // 左クリックでドラッグ開始（リサイズハンドルでない場合のみ）
+            if (e.LeftButton == MouseButtonState.Pressed && !_isResizing)
+            {
+                _isDragging = true;
+                border.CaptureMouse();
+            }
         }
 
         private void Block_MouseMove(object sender, MouseEventArgs e)
         {
-            // Handle drag move (not resizing)
-            if (_isDragging && !_isResizing && _selectedBlock != null && e.LeftButton == MouseButtonState.Pressed)
+            // Handle resize (text, audio, video blocks) - priority first
+            if (_isResizing && _selectedBlock != null && e.LeftButton == MouseButtonState.Pressed)
+            {
+                var currentX = (int)e.GetPosition(this).X;
+                var deltaX = currentX - _dragStartX;
+                System.Diagnostics.Debug.WriteLine($"[Resize MouseMove] Block Type={_selectedBlock.Type}, deltaX={deltaX}, Duration={_selectedBlock.Duration}");
+
+                // ドラッグ中はプレイヘッドをマウス位置に追従
+                var currentMousePos = e.GetPosition(this);
+                UpdatePlayheadToMousePosition(currentMousePos);
+
+                if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
+                var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
+
+                if (_resizeEdge == ResizeEdge.Right)
+                {
+                    var newDuration = Math.Max(1, _resizeStartDuration + framesDelta);
+
+                    // Apply snap to end frame
+                    if (timelineVm.IsSnapEnabled)
+                    {
+                        var endFrame = _selectedBlock.StartFrame + newDuration;
+                        endFrame = ApplySnap(endFrame, _selectedBlock);
+                        newDuration = endFrame - _selectedBlock.StartFrame;
+                        newDuration = Math.Max(1, newDuration);
+                    }
+
+                    _selectedBlock.Duration = newDuration;
+
+                    // リサイズ中にプレイヘッドをブロックの終端に追従
+                    var resizeEndFrame = _selectedBlock.StartFrame + newDuration;
+                    timelineVm.CurrentFrame = resizeEndFrame;
+                    UpdatePlayheadPosition();
+                }
+                else if (_resizeEdge == ResizeEdge.Left)
+                {
+                    var newStart = _dragStartFrame + framesDelta;
+                    var durationChange = -framesDelta;
+
+                    if (newStart >= 0 && (_resizeStartDuration + durationChange) >= 1)
+                    {
+                        // Apply snap to start frame
+                        if (timelineVm.IsSnapEnabled)
+                        {
+                            newStart = ApplySnap(newStart, _selectedBlock);
+                            durationChange = newStart - _dragStartFrame;
+                        }
+
+                        if ((_resizeStartDuration + durationChange) >= 1)
+                        {
+                            _selectedBlock.StartFrame = newStart;
+                            _selectedBlock.Duration = _resizeStartDuration + durationChange;
+
+                            // リサイズ中にプレイヘッドをブロックの開始位置に追従
+                            timelineVm.CurrentFrame = newStart;
+                            UpdatePlayheadPosition();
+                        }
+                    }
+                }
+                return; // Exit early if resizing
+            }
+
+            // Handle drag move (not resizing) - only when dragging and not resizing
+            if (_isDragging && _selectedBlock != null && !_isResizing && e.LeftButton == MouseButtonState.Pressed)
             {
                 var mousePos = e.GetPosition(this);
                 var currentX = (int)mousePos.X;
@@ -99,53 +214,6 @@ namespace VideoCreatorWPF.Views
                 // Update UI to show drag target (optional visual feedback)
                 UpdateDragDropFeedback(currentY);
             }
-
-            // Handle resize
-            if (_isResizing && _selectedBlock != null && e.LeftButton == MouseButtonState.Pressed)
-            {
-                var currentX = (int)e.GetPosition(this).X;
-                var deltaX = currentX - _dragStartX;
-
-                if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
-                var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
-
-                if (_resizeEdge == ResizeEdge.Right)
-                {
-                    var newDuration = Math.Max(1, _resizeStartDuration + framesDelta);
-
-                    // Apply snap to end frame
-                    if (timelineVm.IsSnapEnabled)
-                    {
-                        var endFrame = _selectedBlock.StartFrame + newDuration;
-                        endFrame = ApplySnap(endFrame, _selectedBlock);
-                        newDuration = endFrame - _selectedBlock.StartFrame;
-                        newDuration = Math.Max(1, newDuration);
-                    }
-
-                    _selectedBlock.Duration = newDuration;
-                }
-                else if (_resizeEdge == ResizeEdge.Left)
-                {
-                    var newStart = _dragStartFrame + framesDelta;
-                    var durationChange = -framesDelta;
-
-                    if (newStart >= 0 && (_resizeStartDuration + durationChange) >= 1)
-                    {
-                        // Apply snap to start frame
-                        if (timelineVm.IsSnapEnabled)
-                        {
-                            newStart = ApplySnap(newStart, _selectedBlock);
-                            durationChange = newStart - _dragStartFrame;
-                        }
-
-                        if ((_resizeStartDuration + durationChange) >= 1)
-                        {
-                            _selectedBlock.StartFrame = newStart;
-                            _selectedBlock.Duration = _resizeStartDuration + durationChange;
-                        }
-                    }
-                }
-            }
         }
 
         private void Block_MouseUp(object sender, MouseButtonEventArgs e)
@@ -169,17 +237,28 @@ namespace VideoCreatorWPF.Views
                 }
 
                 // Record undo for block move
-                if (DataContext is ViewModels.TimelineViewModel timelineVm)
+                if (DataContext is ViewModels.TimelineViewModel timelineVmForUndo)
                 {
+                    // ドロップ後にブロックをフォーカス（選択状態に）
+                    timelineVmForUndo.ClearSelection();
+                    timelineVmForUndo.SelectBlock(_selectedBlock, false);
+
                     var moveData = new ViewModels.BlockMoveData
                     {
                         Block = _selectedBlock,
                         OldStartFrame = _dragStartFrame,
                         NewStartFrame = _selectedBlock.StartFrame,
-                        OldDuration = _selectedBlock.Duration,
+                        OldDuration = _resizeStartDuration,
                         NewDuration = _selectedBlock.Duration
                     };
-                    timelineVm.RecordUndo("MoveBlock", moveData);
+                    timelineVmForUndo.RecordUndo("MoveBlock", moveData);
+
+                    // If audio/video block was resized, handle audio stretch
+                    if (_resizeStartDuration != _selectedBlock.Duration &&
+                        (_selectedBlock.Type == BlockType.Audio || _selectedBlock.Type == BlockType.Video))
+                    {
+                        HandleBlockResized(_selectedBlock, _resizeStartDuration);
+                    }
                 }
 
                 // Clear drag feedback
@@ -209,6 +288,7 @@ namespace VideoCreatorWPF.Views
             _dragStartX = (int)e.GetPosition(this).X;
             _dragStartFrame = block.StartFrame;
             _resizeStartDuration = block.Duration;
+            System.Diagnostics.Debug.WriteLine($"[Resize] Left resize started: Type={block.Type}, Duration={block.Duration}");
             border.CaptureMouse();
         }
 
@@ -226,6 +306,7 @@ namespace VideoCreatorWPF.Views
             _resizeEdge = ResizeEdge.Right;
             _dragStartX = (int)e.GetPosition(this).X;
             _resizeStartDuration = block.Duration;
+            System.Diagnostics.Debug.WriteLine($"[Resize] Right resize started: Type={block.Type}, Duration={block.Duration}");
             border.CaptureMouse();
         }
 
@@ -408,9 +489,9 @@ namespace VideoCreatorWPF.Views
             if (DataContext is not ViewModels.TimelineViewModel timelineVm) return sourceTrack;
 
             // Calculate which track row the mouse is over
-            // Track headers are 48px height, ruler is 32px
-            int timelineStartY = 32 + 48; // Approximate - adjust based on actual layout
-            int trackHeight = 48;
+            // Track headers are 24px height, ruler is 32px
+            int timelineStartY = 32 + 24; // Approximate - adjust based on actual layout
+            int trackHeight = 24;
 
             if (yPosition < timelineStartY + trackHeight / 2)
             {
@@ -514,6 +595,32 @@ namespace VideoCreatorWPF.Views
             Left,
             Right,
             None
+        }
+
+        /// <summary>
+        /// ブロックリサイズ時の処理。音声ブロックの場合、 stretched audio を生成
+        /// </summary>
+        private async void HandleBlockResized(TimelineBlock block, int originalDuration)
+        {
+            if (block.Type == BlockType.Audio || block.Type == BlockType.Video)
+            {
+                if (!string.IsNullOrEmpty(block.AudioPath))
+                {
+                    var newDurationSeconds = block.Duration / 30.0;
+                    var originalDurationSeconds = originalDuration / 30.0;
+                    var stretchFactor = newDurationSeconds / originalDurationSeconds;
+
+                    // 伸長率が1でない場合、音声を再配置
+                    if (Math.Abs(stretchFactor - 1.0) > 0.01)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[AudioStretch] Resizing audio: {block.AudioPath}, factor: {stretchFactor:F2}x");
+                        // TODO: Implement actual audio stretching using ffmpeg
+                        // For now, just update the block duration
+                        // In production, you would use ffmpeg to create stretched audio:
+                        // ffmpeg -i input.wav -filter:a "atempo=<stretchFactor>" output.wav
+                    }
+                }
+            }
         }
 
         // Track name double-click to start rename
@@ -735,6 +842,13 @@ namespace VideoCreatorWPF.Views
         {
             if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
 
+            // 再生中に手動でプレイヘッドを移動したら停止
+            bool wasPlaying = timelineVm.IsPlaying;
+            if (wasPlaying)
+            {
+                timelineVm.Pause();
+            }
+
             var pos = e.GetPosition(PlayheadCanvas);
             var x = pos.X;
             if (x < 0) x = 0;
@@ -771,6 +885,20 @@ namespace VideoCreatorWPF.Views
                 mainWindow.PreviewViewControl.VideoPlayer.Pause();
             }
             System.Windows.Media.CompositionTarget.Rendering -= ForceFrameUpdate;
+        }
+
+        private void UpdatePlayheadToMousePosition(Point mousePos)
+        {
+            if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
+
+            // Convert mouse position to playhead canvas coordinates
+            var playheadPos = Mouse.GetPosition(PlayheadCanvas);
+            var x = playheadPos.X;
+            if (x < 0) x = 0;
+
+            var frame = (int)(x / timelineVm.PixelsPerFrame);
+            timelineVm.CurrentFrame = Math.Max(0, frame);
+            UpdatePlayheadPosition();
         }
 
         private void UpdatePlayheadPosition()
@@ -846,6 +974,9 @@ namespace VideoCreatorWPF.Views
 
         public void ScrollToFrame(int frame)
         {
+            // Skip auto-scroll if user is manually scrolling
+            if (_isUserScrolling) return;
+
             // Scroll timeline to keep playhead visible
             var timelineScrollViewer = FindName("TimelineScrollViewer") as ScrollViewer;
             if (timelineScrollViewer != null)
@@ -892,6 +1023,8 @@ namespace VideoCreatorWPF.Views
             }
         }
 
+        private bool _isDraggingOnTracksArea = false;
+
         private void TracksArea_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             // Set playhead position when clicking on tracks area (empty track space)
@@ -908,18 +1041,37 @@ namespace VideoCreatorWPF.Views
             {
                 timelineVm.CurrentFrame = frame;
                 UpdatePlayheadPosition();
+                _isDraggingOnTracksArea = true;
+                (sender as UIElement)?.CaptureMouse();
+            }
+        }
 
-                // Pause video and update position
-                if (Window.GetWindow(this) is MainWindow mainWindow)
+        private void TracksArea_MouseMove(object sender, MouseEventArgs e)
+        {
+            // ドラッグ中はプレイヘッドをマウス位置に追従させる
+            if (_isDraggingOnTracksArea && e.LeftButton == MouseButtonState.Pressed)
+            {
+                if (DataContext is ViewModels.TimelineViewModel timelineVm)
                 {
-                    var fps = 30.0;
-                    var positionSeconds = frame / fps;
-                    var player = mainWindow.PreviewViewControl.VideoPlayer;
-                    player.ScrubbingEnabled = true;
-                    player.Position = TimeSpan.FromSeconds(positionSeconds);
-                    player.Pause();
+                    var playheadCanvas = FindName("PlayheadCanvas") as UIElement;
+                    if (playheadCanvas == null) return;
+
+                    var mousePos = e.GetPosition(playheadCanvas);
+                    var pixelsPerFrame = timelineVm.PixelsPerFrame;
+                    var frame = (int)(mousePos.X / pixelsPerFrame);
+                    if (frame >= 0)
+                    {
+                        timelineVm.CurrentFrame = frame;
+                        UpdatePlayheadPosition();
+                    }
                 }
             }
+        }
+
+        private void TracksArea_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            _isDraggingOnTracksArea = false;
+            (sender as UIElement)?.ReleaseMouseCapture();
         }
     }
 }

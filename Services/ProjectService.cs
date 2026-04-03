@@ -62,7 +62,7 @@ namespace VideoCreatorWPF.Services
 
         public static string GenerateDefaultFileName(string projectName)
         {
-            return $"{projectName.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd_HHmmss}.vcp";
+            return $"{projectName.Replace(" ", "_")}.vcp";
         }
     }
 }
