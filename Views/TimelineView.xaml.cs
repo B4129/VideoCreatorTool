@@ -510,16 +510,51 @@ namespace VideoCreatorWPF.Views
             return timelineVm.Tracks.LastOrDefault();
         }
 
-        // Visual feedback for drag-drop (optional - can add highlight overlay)
+        // Visual feedback for drag-drop
         private void UpdateDragDropFeedback(int currentY)
         {
-            // TODO: Add visual feedback like track highlighting
-            // This would require adding an overlay element to the XAML
+            // Highlight track under cursor during drag
+            var timelineVm = DataContext as ViewModels.TimelineViewModel;
+            if (timelineVm == null) return;
+
+            var trackHeaders = TracksPanel?.Children;
+            if (trackHeaders != null)
+            {
+                for (int i = 0; i < trackHeaders.Count; i++)
+                {
+                    if (trackHeaders[i] is FrameworkElement element)
+                    {
+                        var rect = element.TransformToAncestor(TracksPanel).Transform(new Point(0, 0));
+                        var trackRect = new Rect(rect.X, rect.Y, element.ActualWidth, element.ActualHeight);
+
+                        if (currentY >= rect.Y && currentY < rect.Y + element.ActualHeight)
+                        {
+                            element.Opacity = 1.0;
+                            // Add highlight border (would need additional XAML element)
+                        }
+                        else
+                        {
+                            element.Opacity = 0.6;
+                        }
+                    }
+                }
+            }
         }
 
         private void ClearDragDropFeedback()
         {
-            // TODO: Clear visual feedback
+            // Reset all track opacities
+            var trackHeaders = TracksPanel?.Children;
+            if (trackHeaders != null)
+            {
+                foreach (var child in trackHeaders)
+                {
+                    if (child is FrameworkElement element)
+                    {
+                        element.Opacity = 1.0;
+                    }
+                }
+            }
         }
 
         private void DeleteSelectedBlocks(List<TimelineBlock> blocks, ViewModels.TimelineViewModel timelineVm)
