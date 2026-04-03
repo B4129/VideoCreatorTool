@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -42,6 +43,30 @@ namespace VideoCreatorWPF
                         TimelineViewControl.DataContext = _timelineViewModel;
                         var previewVm = new PreviewViewModel(ViewModel.CurrentProjectViewModel);
                         PreviewViewControl.DataContext = previewVm;
+
+                        // Subscribe to video block start events
+                        _timelineViewModel.VideoBlockStarted += (s, args) =>
+                        {
+                            // Play video in preview
+                            if (!string.IsNullOrEmpty(args.VideoPath))
+                            {
+                                try
+                                {
+                                    PreviewViewControl.VideoPlayer.BeginInit();
+                                    PreviewViewControl.VideoPlayer.Source = new Uri(args.VideoPath);
+                                    PreviewViewControl.VideoPlayer.LoadedBehavior = MediaState.Manual;
+                                    PreviewViewControl.VideoPlayer.EndInit();
+
+                                    // Seek to the correct position if needed
+                                    PreviewViewControl.VideoPlayer.Position = TimeSpan.Zero;
+                                    Debug.WriteLine($"[MainWindow] Video block started: {args.VideoPath}");
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.WriteLine($"[MainWindow] Error loading video: {ex.Message}");
+                                }
+                            }
+                        };
 
                         // Subscribe to CurrentFrame changes to update playhead and preview
                         _timelineViewModel.PropertyChanged += (s, args) =>

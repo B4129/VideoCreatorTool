@@ -16,7 +16,6 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="32"/>
                 <RowDefinition Height="40"/>
             </Grid.RowDefinitions>
 
@@ -84,84 +83,10 @@
                            Visibility="Collapsed"/>
             </Grid>
 
-            <!-- Preview settings toolbar -->
-            <Border Grid.Row="1" Background="#27272a" BorderBrush="#3f3f46" BorderThickness="0,0,0,1">
-                <StackPanel Orientation="Horizontal" Margin="10,0">
-                    <!-- Resolution selector -->
-                    <TextBlock Text="解像度:" Foreground="#a1a1aa" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                    <ComboBox x:Name="ResolutionCombo" Width="100" Height="22" Margin="0,0,10,0"
-                              SelectionChanged="ResolutionCombo_SelectionChanged">
-                        <ComboBoxItem>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="等倍" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                <TextBlock Text="100%" Foreground="#a1a1aa" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </ComboBoxItem>
-                        <ComboBoxItem IsSelected="True">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="半分の大きさ" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                <TextBlock Text="50%" Foreground="#a1a1aa" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text=" quarter" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                <TextBlock Text="25%" Foreground="#a1a1aa" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </ComboBoxItem>
-                    </ComboBox>
-
-                    <!-- Grid toggle -->
-                    <ToggleButton x:Name="GridToggle" Width="24" Height="22" Margin="0,0,3,0"
-                                  Click="GridToggle_Click" ToolTip="グリッド表示">
-                        <Path Data="M3,3H21V21H3V3M5,5V19H19V5H5M7,7H17V17H7V7M9,9V15H15V9H9Z"
-                              Fill="White" Stretch="Uniform" Width="14" Height="14"/>
-                    </ToggleButton>
-
-                    <!-- Safe area toggle -->
-                    <ToggleButton x:Name="SafeAreaToggle" Width="24" Height="22" Margin="0,0,3,0"
-                                  Click="SafeAreaToggle_Click" ToolTip="セーフエリア表示">
-                        <Rectangle Stroke="White" StrokeThickness="1.5" Width="14" Height="10"
-                                   RadiusX="1" RadiusY="1"/>
-                    </ToggleButton>
-
-                    <!-- Onion skin toggle -->
-                    <ToggleButton x:Name="OnionSkinToggle" Width="24" Height="22" Margin="0,0,3,0"
-                                  Click="OnionSkinToggle_Click" ToolTip="オニオンスキン">
-                        <Path Data="M12,5.5A3.5,3.5 0 0,1 15.5,9A3.5,3.5 0 0,1 12,12.5A3.5,3.5 0 0,1 8.5,9A3.5,3.5 0 0,1 12,5.5M12,2A7,7 0 0,0 5,9C5,11.38 6.19,13.47 8,14.74V17A1,1 0 0,0 9,18H15A1,1 0 0,0 16,17V14.74C17.81,13.47 19,11.38 19,9A7,7 0 0,0 12,2M9,21V20H15V21A1,1 0 0,1 14,22H10A1,1 0 0,1 9,21Z"
-                              Fill="White" Stretch="Uniform" Width="14" Height="14"/>
-                    </ToggleButton>
-
-                    <Separator Width="1" Background="#3f3f46" Margin="5,4"/>
-
-                    <!-- Fit toggle -->
-                    <TextBlock Text="表示:" Foreground="#a1a1aa" VerticalAlignment="Center" Margin="5,0,3,0"/>
-                    <ComboBox x:Name="FitModeCombo" Width="110" Height="22"
-                              SelectionChanged="FitModeCombo_SelectionChanged">
-                        <ComboBoxItem IsSelected="True">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="⬜" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="全体表示" Foreground="White" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="🔍" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="拡大" Foreground="White" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </ComboBoxItem>
-                        <ComboBoxItem>
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="📏" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="100%" Foreground="White" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </ComboBoxItem>
-                    </ComboBox>
-                </StackPanel>
-            </Border>
+            <!-- Removed: Preview settings toolbar -->
 
             <!-- Playback controls (seek bar moved to TimelineView) -->
-            <Border Grid.Row="2" Background="#27272a" BorderBrush="#3f3f46" BorderThickness="0,1,0,0">
+            <Border Grid.Row="1" Background="#27272a" BorderBrush="#3f3f46" BorderThickness="0,1,0,0">
                 <Grid>
                     <!-- Playback buttons - centered -->
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">

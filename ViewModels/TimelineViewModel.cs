@@ -63,6 +63,11 @@ namespace VideoCreatorWPF.ViewModels
             RedoCommand = new RelayCommand(_ => Redo(), _ => CanRedo);
         }
 
+        /// <summary>
+        /// 動画ブロック開始イベント
+        /// </summary>
+        public event EventHandler<VideoBlockEventArgs>? VideoBlockStarted;
+
         public bool CanUndo => _undoStack.Count > 0;
         public bool CanRedo => _redoStack.Count > 0;
 
@@ -391,7 +396,7 @@ namespace VideoCreatorWPF.ViewModels
         }
 
         /// <summary>
-        /// 現在のフレーム位置にある音声ブロックを再生
+        /// 現在のフレーム位置にある音声/動画ブロックを再生
         /// </summary>
         private void CheckAndPlayAudioBlocksAtCurrentFrame()
         {
@@ -412,12 +417,30 @@ namespace VideoCreatorWPF.ViewModels
                         System.Diagnostics.Debug.WriteLine($"[Audio] Playing audio block at frame {CurrentFrame}: {block.AudioPath}");
                     }
 
-                    // 再生終了したブロックをクリーニング
+                    // 音声ブロックの再生終了をクリーニング
                     if (block.Type == BlockType.Audio &&
                         _playingAudioBlocks.Contains(block.Id) &&
                         CurrentFrame >= block.StartFrame + block.Duration)
                     {
                         _playingAudioBlocks.Remove(block.Id);
+                    }
+
+                    // 動画ブロックの開始/終了検出
+                    if (block.Type == BlockType.Video && !string.IsNullOrEmpty(block.AudioPath))
+                    {
+                        // 動画ブロックの開始位置に来たら通知
+                        if (block.StartFrame == CurrentFrame)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[Video] Video block started at frame {CurrentFrame}: {block.AudioPath}");
+
+                            // MainWindow経由でプレビューの動画プレイヤーに通知
+                            VideoBlockStarted?.Invoke(this, new VideoBlockEventArgs
+                            {
+                                VideoPath = block.AudioPath,
+                                StartFrame = block.StartFrame,
+                                Duration = block.Duration
+                            });
+                        }
                     }
                 }
             }
@@ -581,6 +604,16 @@ namespace VideoCreatorWPF.ViewModels
         public string Action { get; set; } = string.Empty;
         public object? Data { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.Now;
+    }
+
+    /// <summary>
+    /// 動画ブロック開始イベント
+    /// </summary>
+    public class VideoBlockEventArgs : EventArgs
+    {
+        public string VideoPath { get; set; } = string.Empty;
+        public int StartFrame { get; set; }
+        public int Duration { get; set; }
     }
 
     public class TimelineTrackViewModel : ViewModelBase
