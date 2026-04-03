@@ -314,6 +314,116 @@ namespace VideoCreatorWPF
             dialog.ShowDialog();
         }
 
+        // === AutoComplete / IntelliSense for subtitle input ===
+
+        private List<string> _iconSuggestions = new();
+        private int _suggestionStartIndex = -1;
+
+        private void SubtitleInput_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var text = SubtitleInput.Text;
+            var caretIndex = SubtitleInput.CaretIndex;
+
+            // Check if cursor is after : or [
+            if (caretIndex > 0)
+            {
+                var lastColon = text.LastIndexOf(':', caretIndex - 1);
+                var lastBracket = text.LastIndexOf('[', caretIndex - 1);
+
+                var triggerIndex = Math.Max(lastColon, lastBracket);
+                if (triggerIndex >= 0 && triggerIndex >= caretIndex - 1)
+                {
+                    // Get the partial input
+                    var partial = text.Substring(triggerIndex + 1, caretIndex - triggerIndex - 1);
+                    ShowIconSuggestions(partial, triggerIndex + 1);
+                }
+                else
+                {
+                    HideSuggestions();
+                }
+            }
+            else
+            {
+                HideSuggestions();
+            }
+        }
+
+        private void ShowIconSuggestions(string partial, int replaceStartIndex)
+        {
+            _suggestionStartIndex = replaceStartIndex;
+
+            // Get icon suggestions from current character's dictionary
+            var iconAliases = new List<string>(); // TODO: Get from current character's icon dictionary
+
+            // For testing, use hardcoded values
+            iconAliases = new List<string> { "笑", "泣", "驚", "怒", "楽", " apple", "banana", "cherry" };
+
+            // Filter by partial match
+            var filtered = iconAliases.Where(s => s.Contains(partial, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            AutoCompleteList.ItemsSource = filtered;
+            AutoCompletePopup.IsOpen = filtered.Count > 0;
+        }
+
+        private void HideSuggestions()
+        {
+            AutoCompletePopup.IsOpen = false;
+            _suggestionStartIndex = -1;
+        }
+
+        private void SubtitleInput_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (AutoCompletePopup.IsOpen)
+            {
+                if (e.Key == Key.Tab)
+                {
+                    // Complete with first suggestion
+                    if (AutoCompleteList.Items.Count > 0 && AutoCompleteList.Items[0] is string suggestion)
+                    {
+                        ApplySuggestion(suggestion);
+                        e.Handled = true;
+                    }
+                }
+                else if (e.Key == Key.Escape)
+                {
+                    HideSuggestions();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void AutoCompleteList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AutoCompleteList.SelectedItem is string suggestion)
+            {
+                ApplySuggestion(suggestion);
+            }
+        }
+
+        private void ApplySuggestion(string suggestion)
+        {
+            if (_suggestionStartIndex < 0) return;
+
+            var text = SubtitleInput.Text;
+            var beforeSuggestion = text.Substring(0, _suggestionStartIndex);
+
+            // Detect if bracket or colon started
+            var triggerChar = _suggestionStartIndex > 0 ? text[_suggestionStartIndex - 1] : '\0';
+            var closingChar = triggerChar == '[' ? ']' : triggerChar == ':' ? ':' : '\0';
+
+            // Insert suggestion with closing char
+            var newText = beforeSuggestion + suggestion + closingChar;
+            if (_suggestionStartIndex < text.Length)
+            {
+                newText += text.Substring(_suggestionStartIndex);
+            }
+
+            SubtitleInput.Text = newText;
+            SubtitleInput.CaretIndex = newText.Length - (closingChar != '\0' ? 1 : 0);
+            HideSuggestions();
+            SubtitleInput.Focus();
+        }
+
         /// <summary>
         /// SRT字幕ファイルのインポート
         /// </summary>
