@@ -247,7 +247,7 @@
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="再生速度" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <Slider Value="{Binding BlockProperties.PlaybackSpeed}" Minimum="0.25" Maximum="4" TickFrequency="0.25"
+                                <Slider Value="{Binding BlockProperties.PlaybackSpeed}" Minimum="0.5" Maximum="4" TickFrequency="0.1"
                                         Height="24"/>
                                 <TextBlock Text="{Binding BlockProperties.PlaybackSpeed, StringFormat={}{0:F2}x}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
@@ -291,7 +291,7 @@
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="再生速度" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <Slider Value="{Binding BlockProperties.PlaybackSpeed}" Minimum="0.25" Maximum="4" TickFrequency="0.25"
+                                <Slider Value="{Binding BlockProperties.PlaybackSpeed}" Minimum="0.5" Maximum="4" TickFrequency="0.1"
                                         Height="24"/>
                                 <TextBlock Text="{Binding BlockProperties.PlaybackSpeed, StringFormat={}{0:F2}x}"
                                            Foreground="{StaticResource TextSecondaryBrush}"
