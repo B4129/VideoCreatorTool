@@ -112,6 +112,33 @@
                 </StackPanel>
             </Border>
 
+            <!-- Seek bar row -->
+            <Border DockPanel.Dock="Top" Height="36" Background="#2c2c2c" BorderBrush="#555555" BorderThickness="0,0,0,1">
+                <Grid Margin="10,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: spacer (aligned with track headers) -->
+                    <TextBlock Grid.Column="0" Text="シーク:" Foreground="#a1a1aa"
+                               VerticalAlignment="Center" Margin="10,0,0,0" FontSize="12"/>
+
+                    <!-- Right: seek bar (aligned with timeline) -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CurrentPositionText}" Foreground="#a1a1aa"
+                                   VerticalAlignment="Center" Margin="0,0,5,0" Width="50" TextAlignment="Right"
+                                   FontWeight="Bold"/>
+                        <Slider x:Name="TimelineSeekSlider" Width="400" Height="22"
+                                Minimum="0" Maximum="{Binding TotalFrames}"
+                                Value="{Binding CurrentFrame, Mode=TwoWay}"
+                                TickFrequency="1" IsSnapToTickEnabled="False"/>
+                        <TextBlock Text="{Binding DurationText}" Foreground="#a1a1aa"
+                                   VerticalAlignment="Center" Margin="5,0,0,0" Width="50"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- Main timeline area: Split into left (track headers) and right (timeline + ruler) -->
             <Grid>
                 <Grid.ColumnDefinitions>

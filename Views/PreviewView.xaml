@@ -117,22 +117,9 @@
                 </StackPanel>
             </Border>
 
-            <!-- Playback controls -->
+            <!-- Playback controls (seek bar moved to TimelineView) -->
             <Border Grid.Row="2" Background="#27272a" BorderBrush="#3f3f46" BorderThickness="0,1,0,0">
                 <Grid>
-                    <!-- Seek bar - full width -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
-                        <TextBlock Text="{Binding CurrentPositionText}" Foreground="#a1a1aa"
-                                   VerticalAlignment="Center" Margin="0,0,5,0" Width="50" TextAlignment="Right"/>
-                        <Slider x:Name="SeekSlider" Width="300" Height="25"
-                                Minimum="0" Maximum="{Binding Duration}"
-                                Value="{Binding CurrentPosition, Mode=TwoWay}"
-                                Thumb.DragStarted="SeekSlider_DragStarted"
-                                Thumb.DragCompleted="SeekSlider_DragCompleted"/>
-                        <TextBlock Text="{Binding DurationText}" Foreground="#a1a1aa"
-                                   VerticalAlignment="Center" Margin="5,0,0,0" Width="50"/>
-                    </StackPanel>
-
                     <!-- Playback buttons - centered -->
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
                         <Button Content="⏮" Click="RestartButton_Click" Width="50" Height="40"

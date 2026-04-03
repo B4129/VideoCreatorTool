@@ -101,8 +101,9 @@ namespace VideoCreatorWPF.ViewModels
             {
                 if (SetProperty(ref _currentFrame, value))
                 {
-                    // Notify view to update playhead
                     OnPropertyChanged(nameof(CurrentFrame));
+                    OnPropertyChanged(nameof(CurrentPositionText));
+                    OnPropertyChanged(nameof(DurationText));
                 }
             }
         }
@@ -168,6 +169,31 @@ namespace VideoCreatorWPF.ViewModels
         {
             _totalFrames = frames;
             OnPropertyChanged(nameof(TotalFrames));
+            OnPropertyChanged(nameof(DurationText));
+        }
+
+        // Position text properties for seek bar
+        public string CurrentPositionText
+        {
+            get
+            {
+                var seconds = _currentFrame / 30.0;
+                var minutes = (int)(seconds / 60);
+                var secs = (int)(seconds % 60);
+                return $"{minutes:D2}:{secs:D2}";
+            }
+        }
+
+        public string DurationText
+        {
+            get
+            {
+                var totalFrames = TotalFrames;
+                var seconds = totalFrames / 30.0;
+                var minutes = (int)(seconds / 60);
+                var secs = (int)(seconds % 60);
+                return $"{minutes:D2}:{secs:D2}";
+            }
         }
 
         // Zoom methods

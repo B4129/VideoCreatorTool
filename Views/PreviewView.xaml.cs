@@ -175,11 +175,7 @@ namespace VideoCreatorWPF.Views
                     viewModel.UpdatePositionFromTimer(positionSeconds);
                 }
 
-                // Update slider position only when not dragging
-                if (SeekSlider != null && !_isDragging)
-                {
-                    SeekSlider.Value = positionSeconds;
-                }
+                // Slider removed - seek bar moved to TimelineView
 
                 // Update timeline playhead
                 if (Window.GetWindow(this) is MainWindow mainWindow &&
@@ -196,7 +192,6 @@ namespace VideoCreatorWPF.Views
         }
 
         private System.Threading.Timer? _positionTimer;
-        private bool _isDragging = false;
         private bool _isPlaying = false;
         private string? _pendingVideoFilePath;
         private ViewModels.TimelineTrackViewModel? _pendingTrackForBlock;
@@ -335,21 +330,6 @@ namespace VideoCreatorWPF.Views
             e.Effects = DragDropEffects.None;
             DropHintText.Visibility = Visibility.Collapsed;
             e.Handled = true;
-        }
-
-        private void SeekSlider_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
-        {
-            _isDragging = true;
-            // Pause during seeking
-            VideoPlayer.Pause();
-        }
-
-        private void SeekSlider_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
-        {
-            _isDragging = false;
-            // Seek to new position
-            VideoPlayer.Position = TimeSpan.FromSeconds(SeekSlider.Value);
-            VideoPlayer.Play();
         }
 
         public void StopPlayback()
