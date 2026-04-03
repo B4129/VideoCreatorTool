@@ -167,6 +167,25 @@ namespace VideoCreatorWPF.Models
         public int TrackIndex { get; set; }
         public Guid TrackId { get; set; }
 
+        public TimelineBlock()
+        {
+            // Set default values for all properties
+            _volume = 1.0;
+            _playbackSpeed = 1.0;
+            _opacity = 1.0;
+            _loop = false;
+            _fontFamily = "MJoy";
+            _fontSize = 32.0;
+            _fontColor = "#ffffff";
+            _textColor = "#FFFFFF";
+            _textPositionX = 50.0;
+            _textPositionY = 85.0;
+            _fadeInFrames = 0;
+            _fadeOutFrames = 0;
+            _audioFadeInFrames = 0;
+            _audioFadeOutFrames = 0;
+        }
+
         private int _startFrame;
         public int StartFrame
         {

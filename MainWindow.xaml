@@ -53,9 +53,6 @@
                     <MenuItem Header="ツール(T)" Padding="10,5">
                         <MenuItem Header="設定(_G)" Command="{Binding OpenSettingsCommand}"/>
                     </MenuItem>
-                    <MenuItem Header="ヘルプ(H)" Padding="10,5">
-                        <MenuItem Header="バージョン情報"/>
-                    </MenuItem>
                 </Menu>
         </Border>
 
@@ -109,29 +106,32 @@
                         <StackPanel Margin="0,0,0,10">
                             <TextBlock Text="名前" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
                             <TextBox Text="{Binding BlockProperties.BlockName, UpdateSourceTrigger=PropertyChanged}"
-                                     Height="32" FontSize="12" Padding="6,6"
+                                     Height="32" FontSize="12" Padding="8,4"
                                      Background="{StaticResource SurfaceBrush}"
                                      Foreground="{StaticResource TextPrimaryBrush}"
                                      BorderBrush="{StaticResource BorderBrush}"
-                                     VerticalContentAlignment="Center"/>
+                                     VerticalContentAlignment="Center"
+                                     TextWrapping="NoWrap"/>
                         </StackPanel>
 
                         <StackPanel Margin="0,0,0,10">
                             <TextBlock Text="開始フレーム" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                            <TextBox Text="{Binding BlockProperties.StartFrame}" Height="32" FontSize="12" Padding="6,6"
+                            <TextBox Text="{Binding BlockProperties.StartFrame}" Height="32" FontSize="12" Padding="8,4"
                                      Background="{StaticResource SurfaceBrush}"
                                      Foreground="{StaticResource TextPrimaryBrush}"
                                      BorderBrush="{StaticResource BorderBrush}"
-                                     VerticalContentAlignment="Center"/>
+                                     VerticalContentAlignment="Center"
+                                     TextWrapping="NoWrap"/>
                         </StackPanel>
 
                         <StackPanel Margin="0,0,0,10">
                             <TextBlock Text="長さ（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                            <TextBox Text="{Binding BlockProperties.Duration}" Height="32" FontSize="12" Padding="6,6"
+                            <TextBox Text="{Binding BlockProperties.Duration}" Height="32" FontSize="12" Padding="8,4"
                                      Background="{StaticResource SurfaceBrush}"
                                      Foreground="{StaticResource TextPrimaryBrush}"
                                      BorderBrush="{StaticResource BorderBrush}"
-                                     VerticalContentAlignment="Center"/>
+                                     VerticalContentAlignment="Center"
+                                     TextWrapping="NoWrap"/>
                         </StackPanel>
 
                         <!-- Text block properties -->
@@ -162,11 +162,12 @@
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="フォントサイズ" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <TextBox Text="{Binding BlockProperties.FontSize}" Height="32" FontSize="12" Padding="6,6"
+                                <TextBox Text="{Binding BlockProperties.FontSize}" Height="32" FontSize="12" Padding="8,4"
                                          Background="{StaticResource SurfaceBrush}"
                                          Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderBrush="{StaticResource BorderBrush}"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center"
+                                         TextWrapping="NoWrap"/>
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,10">
@@ -191,19 +192,21 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="X位置 (%)" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                    <TextBox Text="{Binding BlockProperties.PositionX}" Height="32" FontSize="12" Padding="6,6"
+                                    <TextBox Text="{Binding BlockProperties.PositionX}" Height="32" FontSize="12" Padding="8,4"
                                              Background="{StaticResource SurfaceBrush}"
                                              Foreground="{StaticResource TextPrimaryBrush}"
                                              BorderBrush="{StaticResource BorderBrush}"
-                                             VerticalContentAlignment="Center"/>
+                                             VerticalContentAlignment="Center"
+                                             TextWrapping="NoWrap"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Y位置 (%)" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                    <TextBox Text="{Binding BlockProperties.PositionY}" Height="32" FontSize="12" Padding="6,6"
+                                    <TextBox Text="{Binding BlockProperties.PositionY}" Height="32" FontSize="12" Padding="8,4"
                                              Background="{StaticResource SurfaceBrush}"
                                              Foreground="{StaticResource TextPrimaryBrush}"
                                              BorderBrush="{StaticResource BorderBrush}"
-                                             VerticalContentAlignment="Center"/>
+                                             VerticalContentAlignment="Center"
+                                             TextWrapping="NoWrap"/>
                                 </StackPanel>
                             </Grid>
 

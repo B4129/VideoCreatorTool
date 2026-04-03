@@ -67,9 +67,9 @@
                     <TextBlock Text="|" Foreground="#555555" VerticalAlignment="Center" Margin="8,0"/>
 
                     <!-- Split button -->
-                    <Button Content="分割" Command="{Binding SplitBlockCommand}"
-                            Width="70" Height="32" FontSize="12"
-                            Style="{StaticResource TimelineToolBarButtonStyle}"/>
+                    <Button Content="✂" Command="{Binding SplitBlockCommand}"
+                            Width="70" Height="32" FontSize="16"
+                            Style="{StaticResource TimelineToolBarButtonStyle}" ToolTip="ブロックを分割"/>
 
                 </StackPanel>
             </Border>
@@ -314,6 +314,7 @@
                                                                                 MouseMove="Block_MouseMove"
                                                                                 MouseUp="Block_MouseUp"
                                                                                 x:Name="BlockBorder"
+                                                                                Panel.ZIndex="100"
                                                                                 Background="{Binding BackgroundColor}"
                                                                                 BorderBrush="#5d8cb3"
                                                                                 BorderThickness="1">
