@@ -114,9 +114,18 @@
 
             <!-- Removed: Preview settings toolbar -->
 
-            <!-- Seek bar overlay at bottom of preview -->
-            <Border Grid.Row="0" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
-                    Background="#80000000" Padding="15,8" Margin="0,0,0,40">
+            <!-- Seek bar overlay at bottom of preview (hidden by default, shown on hover) -->
+            <Border x:Name="SeekBarOverlay" Grid.Row="0" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                    Background="#80000000" Padding="15,8" Margin="0,0,0,40" Opacity="0">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMouseOver, ElementName=PreviewGrid}" Value="True">
+                                <Setter Property="Opacity" Value="1"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -130,7 +139,8 @@
 
                     <!-- Seek slider -->
                     <Slider x:Name="PreviewSeekSlider" Grid.Column="1" Height="22"
-                            Minimum="0" Maximum="{Binding TotalFrames}"
+                            Minimum="0"
+                            Maximum="{Binding DataContext.TotalFrames, RelativeSource={RelativeSource AncestorType=Window}}"
                             Value="{Binding CurrentFrame, Mode=TwoWay}"
                             TickFrequency="1" IsSnapToTickEnabled="False"
                             ValueChanged="PreviewSeekSlider_ValueChanged"/>
