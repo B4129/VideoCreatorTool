@@ -10,7 +10,7 @@
 
 ### コミット手順
 ```bash
-cd "C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF"
+cd "C:\Users\neko3\Desktop\agent\VideoCreator\VideoCreatorWPF"
 git add -A
 git commit -m "feat: 実装内容の説明"
 git push origin develop
