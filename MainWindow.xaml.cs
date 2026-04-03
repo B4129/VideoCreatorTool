@@ -359,7 +359,7 @@ namespace VideoCreatorWPF
             }
         }
 
-        // ドキュメント用スクリーンショットを撮影
+        // ドキュメント用スクリーンショットを撮影（publicで外部から呼び出し可能）
         public void TakeDocScreenshot(string screenshotName)
         {
             try
@@ -384,7 +384,7 @@ namespace VideoCreatorWPF
                 encoder.Frames.Add(BitmapFrame.Create(renderTarget));
 
                 // docsフォルダに保存
-                var docsDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\docs";
+                var docsDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\docs";
                 if (!Directory.Exists(docsDir))
                 {
                     Directory.CreateDirectory(docsDir);

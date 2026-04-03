@@ -87,12 +87,13 @@ namespace VideoCreatorWPF.Services
 
                 try
                 {
-                    // VOICEVOXを起動
+                    // VOICEVOXをバックグラウンドで起動（画面に表示しない）
                     var processStartInfo = new ProcessStartInfo
                     {
                         FileName = voicevoxPath,
-                        UseShellExecute = true,
-                        WindowStyle = ProcessWindowStyle.Minimized
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
                     };
 
                     Process.Start(processStartInfo);
