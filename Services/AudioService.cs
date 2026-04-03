@@ -11,35 +11,40 @@ namespace VideoCreatorWPF.Services
     {
         private static ConcurrentDictionary<string, MediaPlayer> _players = new();
 
-        public static Task PlayAudioAsync(string audioPath, double startPositionSeconds = 0)
+        public static async Task PlayAudioAsync(string audioPath, double startPositionSeconds = 0)
         {
-            return Task.Run(() =>
+            try
             {
-                try
+                Debug.WriteLine($"[Audio] PlayAudioAsync called: {audioPath}");
+
+                if (!File.Exists(audioPath))
                 {
-                    Debug.WriteLine($"[Audio] PlayAudioAsync called: {audioPath}");
+                    Debug.WriteLine($"[Audio] Audio file not found: {audioPath}");
+                    return;
+                }
 
-                    if (!File.Exists(audioPath))
-                    {
-                        Debug.WriteLine($"[Audio] Audio file not found: {audioPath}");
-                        return;
-                    }
+                // Stop current playback of this audio if any
+                StopAudio(audioPath);
 
-                    // Stop current playback of this audio if any
-                    StopAudio(audioPath);
+                var player = new MediaPlayer();
+                _players[audioPath] = player;
 
-                    var player = new MediaPlayer();
+                // Set completed event
+                var tcs = new TaskCompletionSource<bool>();
+                bool completed = false;
 
-                    // Open and wait for media
-                    player.Open(new Uri(audioPath));
+                // Subscribe to MediaEnded
+                player.MediaEnded += (s, e) =>
+                {
+                    Debug.WriteLine($"[Audio] MediaEnded: {Path.GetFileName(audioPath)}");
+                    completed = true;
+                    tcs.TrySetResult(true);
+                };
 
-                    var timeout = DateTime.Now.AddSeconds(5);
-                    while (player.NaturalDuration.TimeSpan == TimeSpan.Zero && DateTime.Now < timeout)
-                    {
-                        System.Threading.Thread.Sleep(100);
-                    }
-
-                    Debug.WriteLine($"[Audio] Media opened, duration: {player.NaturalDuration.TimeSpan}");
+                // Open media asynchronously
+                player.MediaOpened += (s, e) =>
+                {
+                    Debug.WriteLine($"[Audio] MediaOpened, duration: {player.NaturalDuration.TimeSpan}");
 
                     // Seek to start position if specified
                     if (startPositionSeconds > 0)
@@ -53,25 +58,23 @@ namespace VideoCreatorWPF.Services
                         }
                     }
 
-                    _players[audioPath] = player;
-
                     // Play the audio
                     player.Play();
                     Debug.WriteLine($"[Audio] Play() called for: {Path.GetFileName(audioPath)}");
+                };
 
-                    // Keep the task alive until playback completes
-                    while (player.Position < player.NaturalDuration.TimeSpan)
-                    {
-                        System.Threading.Thread.Sleep(100);
-                    }
+                player.Open(new Uri(audioPath));
 
-                    Debug.WriteLine($"[Audio] Playback completed: {Path.GetFileName(audioPath)}");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"[Audio] Playback error: {ex.Message}");
-                }
-            });
+                // Wait for media to end or be stopped
+                var timeout = Task.Delay(TimeSpan.FromMinutes(30));
+                await Task.WhenAny(tcs.Task, timeout);
+
+                Debug.WriteLine($"[Audio] Playback completed or timed out: {Path.GetFileName(audioPath)}");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Audio] Playback error: {ex.Message}");
+            }
         }
 
         public static void StopAudio(string audioPath)

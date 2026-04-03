@@ -70,7 +70,15 @@ namespace VideoCreatorWPF.Views
                             if (positionSeconds >= 0 && VideoPlayer.Source != null)
                             {
                                 VideoPlayer.Position = TimeSpan.FromSeconds(positionSeconds);
-                                VideoPlayer.Pause();
+                                // If was playing, continue playback after seek
+                                if (_isPlaying)
+                                {
+                                    VideoPlayer.Play();
+                                }
+                                else
+                                {
+                                    VideoPlayer.Pause();
+                                }
                             }
                         }
                     }
@@ -197,6 +205,12 @@ namespace VideoCreatorWPF.Views
                         _pendingTimelineVmForBlock = null;
                         _pendingMainWindowForBlock = null;
                     }
+
+                    // Start playback from current position
+                    VideoPlayer.Position = TimeSpan.Zero;
+                    VideoPlayer.Play();
+                    _isPlaying = true;
+                    Debug.WriteLine("[Preview] Starting video playback");
                 }
                 else
                 {
