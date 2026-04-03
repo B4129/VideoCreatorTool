@@ -157,14 +157,14 @@ namespace VideoCreatorWPF
                 targetTrack = timelineVm.Tracks.Last();
             }
 
-            // Create text block
+            // Create text block (yellow-green)
             var textBlock = new TimelineBlock
             {
                 CharacterId = Guid.NewGuid(),
                 StartFrame = playheadFrame,
                 Duration = blockDuration,
                 Text = text,
-                BackgroundColor = "#4a6fa5",
+                BackgroundColor = "#7CFC00", // Yellow-green for text
                 Type = BlockType.Dialogue,
                 FontFamily = _currentFontFamily,
                 FontSize = _currentFontSize,
@@ -187,8 +187,8 @@ namespace VideoCreatorWPF
                     Duration = blockDuration, // Same duration as text block
                     Text = text,
                     AudioPath = audioPath,
-                    BackgroundColor = "#3b82f6",
-                    Type = BlockType.Dialogue,
+                    BackgroundColor = "#FF4500", // Red for audio
+                    Type = BlockType.Audio,
                     FontFamily = _currentFontFamily,
                     FontSize = _currentFontSize,
                     TextColor = _currentTextColor,
@@ -208,8 +208,8 @@ namespace VideoCreatorWPF
                     Duration = blockDuration,
                     Text = text,
                     AudioPath = audioPath,
-                    BackgroundColor = "#3b82f6",
-                    Type = BlockType.Dialogue,
+                    BackgroundColor = "#FF4500", // Red for audio
+                    Type = BlockType.Audio,
                     FontFamily = _currentFontFamily,
                     FontSize = _currentFontSize,
                     TextColor = _currentTextColor,

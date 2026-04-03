@@ -172,11 +172,12 @@ namespace VideoCreatorWPF.Models
 
     public enum BlockType
     {
-        Dialogue,
+        Dialogue,       // テキスト（黄緑）
         Image,
-        Video,
+        Video,          // 動画（青）
         Effect,
-        Subtitle
+        Subtitle,
+        Audio           // 音声（赤）
     }
 
     public class TimelineTrack
