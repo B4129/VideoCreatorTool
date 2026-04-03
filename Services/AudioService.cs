@@ -50,10 +50,6 @@ namespace VideoCreatorWPF.Services
                 {
                     Debug.WriteLine($"[Audio] MediaOpened, duration: {player.NaturalDuration.TimeSpan}");
 
-                    // Set playback speed
-                    player.SpeedRatio = playbackSpeed;
-                    Debug.WriteLine($"[Audio] Set playback speed to {playbackSpeed}");
-
                     // Seek to start position if specified
                     if (startPositionSeconds > 0)
                     {
@@ -66,9 +62,13 @@ namespace VideoCreatorWPF.Services
                         }
                     }
 
+                    // Set playback speed BEFORE playing
+                    player.SpeedRatio = playbackSpeed;
+                    Debug.WriteLine($"[Audio] Set playback speed to {playbackSpeed}");
+
                     // Play the audio
                     player.Play();
-                    Debug.WriteLine($"[Audio] Play() called for: {Path.GetFileName(audioPath)}");
+                    Debug.WriteLine($"[Audio] Play() called for: {Path.GetFileName(audioPath)} at {playbackSpeed}x speed");
                 };
 
                 player.Open(new Uri(audioPath));

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using VideoCreatorWPF.Commands;
 using VideoCreatorWPF.Models;
@@ -556,7 +558,7 @@ namespace VideoCreatorWPF.ViewModels
                     {
                         // 音声ファイルを最初から再生
                         _playingAudioBlocks.Add(block.Id);
-                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath, 0, block.PlaybackSpeed);
+                        _ = PlayAudioBlockAsync(block);
 
                         System.Diagnostics.Debug.WriteLine($"[Audio] Playing audio block at frame {CurrentFrame}: {block.AudioPath}");
                     }
@@ -602,6 +604,9 @@ namespace VideoCreatorWPF.ViewModels
             IsPlaying = false;
             _playTimer?.Dispose();
             _playTimer = null;
+
+            // Stop all audio playback on pause
+            Services.AudioService.StopAll();
             _playingAudioBlocks.Clear(); // 一時停止時に再生中リストをクリア
         }
 
@@ -632,6 +637,23 @@ namespace VideoCreatorWPF.ViewModels
 
             _project.Tracks.Add(track);
             Tracks.Add(new TimelineTrackViewModel(track));
+        }
+
+        /// <summary>
+        /// 音声ブロックを再生し、完了時に_playingAudioBlocksから削除する
+        /// </summary>
+        private async Task PlayAudioBlockAsync(Models.TimelineBlock block)
+        {
+            try
+            {
+                await Services.AudioService.PlayAudioAsync(block.AudioPath, 0, block.PlaybackSpeed);
+            }
+            finally
+            {
+                // 再生終了後にリストから削除
+                _playingAudioBlocks.Remove(block.Id);
+                Debug.WriteLine($"[Audio] Audio block finished at frame {CurrentFrame}: {block.AudioPath}");
+            }
         }
 
         private void AddTrack()
