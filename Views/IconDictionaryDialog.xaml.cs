@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
@@ -13,6 +14,7 @@ namespace VideoCreatorWPF.Views
     {
         private Guid _currentCharacterId;
         private ObservableCollection<IconAlias> _icons = new();
+        private List<Character> _characters = new();
 
         public IconDictionaryDialog()
         {
@@ -23,16 +25,63 @@ namespace VideoCreatorWPF.Views
 
         private void LoadCharacters()
         {
-            // TODO: Load characters from project
-            // For now, just show placeholder
-            CharacterCombo.Items.Add(new ComboBoxItem { Content = "キャラクターを選択" });
-            CharacterCombo.SelectedIndex = 0;
+            // Load characters from current project
+            // TODO: Load from ProjectService or singleton
+            var mainWindow = Application.Current.MainWindow?.DataContext as ViewModels.MainWindowViewModel;
+            if (mainWindow?.CurrentProjectViewModel != null)
+            {
+                // For now, use test data
+                // TODO: Get from actual project when Project class is implemented
+                CreateTestCharacters();
+            }
+            else
+            {
+                CreateTestCharacters();
+            }
+
+            if (CharacterCombo.Items.Count > 0)
+            {
+                CharacterCombo.SelectedIndex = 0;
+            }
+        }
+
+        private void CreateTestCharacters()
+        {
+            _characters = new List<Character>
+            {
+                new Character { Name = "ずんだもん", Id = Guid.NewGuid(), SpeakerId = 2 },
+                new Character { Name = "四国めたん", Id = Guid.NewGuid(), SpeakerId = 1 },
+                new Character { Name = "春日部つむぎ", Id = Guid.NewGuid(), SpeakerId = 8 }
+            };
+
+            CharacterCombo.Items.Clear();
+            foreach (var character in _characters)
+            {
+                CharacterCombo.Items.Add(new ComboBoxItem
+                {
+                    Content = character.Name,
+                    Tag = character.Id
+                });
+            }
         }
 
         private void CharacterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // TODO: Load icons for selected character
-            // IconDictionaryService.Instance.GetCharacterIcons(characterId)
+            if (CharacterCombo.SelectedItem is ComboBoxItem item && item.Tag is Guid characterId)
+            {
+                _currentCharacterId = characterId;
+
+                // Load icons for selected character
+                _icons.Clear();
+                var character = _characters.FirstOrDefault(c => c.Id == characterId);
+                if (character != null)
+                {
+                    foreach (var alias in character.IconAliases)
+                    {
+                        _icons.Add(alias);
+                    }
+                }
+            }
         }
 
         private void BrowseImage_Click(object sender, RoutedEventArgs e)

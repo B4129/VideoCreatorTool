@@ -26,8 +26,27 @@ namespace VideoCreatorWPF.Views
 
         private void LoadCharacters()
         {
-            // TODO: Load from project
-            _characters.Clear();
+            // Load characters from main window view model
+            var mainWindow = Application.Current.MainWindow?.DataContext as ViewModels.MainWindowViewModel;
+            if (mainWindow?.CurrentProjectViewModel != null)
+            {
+                _characters.Clear();
+                // TODO: Get characters from actual project
+                CreateDefaultCharacters();
+            }
+            else
+            {
+                CreateDefaultCharacters();
+            }
+
+            if (_characters.Count > 0)
+            {
+                CharacterList.SelectedIndex = 0;
+            }
+        }
+
+        private void CreateDefaultCharacters()
+        {
             _characters.Add(new Character
             {
                 Name = "ずんだもん",
@@ -58,11 +77,6 @@ namespace VideoCreatorWPF.Views
                 Intonation = 1.2,
                 Volume = 1.0
             });
-
-            if (_characters.Count > 0)
-            {
-                CharacterList.SelectedIndex = 0;
-            }
         }
 
         private void CharacterList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -296,16 +310,60 @@ namespace VideoCreatorWPF.Views
 
         private void PickFontColor_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement color picker
-            FontColorBox.Text = "#FF0000";
-            FontColorPreview.Background = new SolidColorBrush(Color.FromRgb(255, 0, 0));
+            var dialog = new ColorPickerDialog
+            {
+                Owner = this,
+                SelectedColor = ParseColor(FontColorBox.Text)
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var color = dialog.SelectedColor;
+                var hex = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+                FontColorBox.Text = hex;
+                FontColorPreview.Background = new SolidColorBrush(color);
+
+                if (_currentCharacter != null)
+                {
+                    _currentCharacter.Color = hex;
+                }
+            }
         }
 
         private void PickOutlineColor_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement color picker
-            OutlineColorBox.Text = "#000000";
-            OutlineColorPreview.Background = new SolidColorBrush(Color.FromRgb(0, 0, 0));
+            var dialog = new ColorPickerDialog
+            {
+                Owner = this,
+                SelectedColor = ParseColor(OutlineColorBox.Text)
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var color = dialog.SelectedColor;
+                var hex = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+                OutlineColorBox.Text = hex;
+                OutlineColorPreview.Background = new SolidColorBrush(color);
+            }
+        }
+
+        private Color ParseColor(string hex)
+        {
+            if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#"))
+                return Colors.White;
+
+            try
+            {
+                hex = hex.TrimStart('#');
+                byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+                byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+                byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+                return Color.FromArgb(255, r, g, b);
+            }
+            catch
+            {
+                return Colors.White;
+            }
         }
 
         private void BrowseDictionaryImage_Click(object sender, RoutedEventArgs e)
@@ -328,12 +386,41 @@ namespace VideoCreatorWPF.Views
 
         private void AddDictionaryRow_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Add new row to dictionary
+            if (_currentCharacter == null)
+            {
+                MessageBox.Show("キャラクターを選択してください。", "警告",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var newAlias = new IconAlias
+            {
+                SearchKey = "[new]",
+                ImagePath = "",
+                HeightScale = 1.0,
+                OffsetX = 0.0,
+                OffsetY = 0.0,
+                IsEnabled = true,
+                Description = "新しいエイリアス"
+            };
+
+            _currentCharacter.IconAliases.Add(newAlias);
+            newAlias.CompilePattern();
         }
 
         private void DeleteDictionaryRow_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Delete selected row
+            if (_currentCharacter != null && DictionaryGrid.SelectedItem is IconAlias selected)
+            {
+                var result = MessageBox.Show(
+                    $"「{selected.SearchKey}」を削除しますか？",
+                    "確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    _currentCharacter.IconAliases.Remove(selected);
+                }
+            }
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)

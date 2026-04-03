@@ -364,16 +364,50 @@ namespace VideoCreatorWPF
             _suggestionStartIndex = replaceStartIndex;
 
             // Get icon suggestions from current character's dictionary
-            var iconAliases = new List<string>(); // TODO: Get from current character's icon dictionary
+            var iconAliases = new List<string>();
 
-            // For testing, use hardcoded values
-            iconAliases = new List<string> { "笑", "泣", "驚", "怒", "楽", " apple", "banana", "cherry" };
+            // Get current character from character combo
+            if (CharacterCombo.SelectedItem is ComboBoxItem selectedItem)
+            {
+                var characterName = selectedItem.Content.ToString();
+                var character = GetCharacterByName(characterName ?? "");
+                if (character != null)
+                {
+                    // Get icon aliases from character
+                    foreach (var alias in character.IconAliases)
+                    {
+                        if (!string.IsNullOrEmpty(alias.SearchKey))
+                        {
+                            // Remove brackets/colons for display
+                            var key = alias.SearchKey.Trim('[', ']', ':');
+                            iconAliases.Add(key);
+                        }
+                    }
+                }
+            }
+
+            // If no character icons, use defaults
+            if (iconAliases.Count == 0)
+            {
+                iconAliases = new List<string> { "笑", "泣", "驚", "怒", "楽" };
+            }
 
             // Filter by partial match
             var filtered = iconAliases.Where(s => s.Contains(partial, StringComparison.OrdinalIgnoreCase)).ToList();
 
             AutoCompleteList.ItemsSource = filtered;
             AutoCompletePopup.IsOpen = filtered.Count > 0;
+        }
+
+        private Character? GetCharacterByName(string name)
+        {
+            var mainWindow = Application.Current.MainWindow?.DataContext as ViewModels.MainWindowViewModel;
+            if (mainWindow?.CurrentProjectViewModel != null)
+            {
+                // TODO: Get characters from actual project when implemented
+                return null;
+            }
+            return null;
         }
 
         private void HideSuggestions()
