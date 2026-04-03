@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -57,6 +58,8 @@ namespace VideoCreatorWPF.ViewModels
             PauseCommand = new RelayCommand(_ => Pause());
             StopCommand = new RelayCommand(_ => Stop());
             JumpToTimecodeCommand = new RelayCommand(_ => JumpToTimecode(), _ => !string.IsNullOrEmpty(_timecodeInput));
+            NewProjectFromTemplateCommand = new RelayCommand(async _ => await NewProjectFromTemplate());
+            SaveAsTemplateCommand = new RelayCommand(_ => SaveAsTemplate(), _ => _currentProject != null);
 
             // Initialize settings and create default project after UI is ready
             System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(async () =>
@@ -136,6 +139,8 @@ namespace VideoCreatorWPF.ViewModels
         public ICommand PauseCommand { get; }
         public ICommand StopCommand { get; }
         public ICommand JumpToTimecodeCommand { get; }
+        public ICommand NewProjectFromTemplateCommand { get; }
+        public ICommand SaveAsTemplateCommand { get; }
 
         /// <summary>
         /// タイムコード入力欄の値
@@ -397,6 +402,105 @@ namespace VideoCreatorWPF.ViewModels
         {
             // タイムライントラックの変更を通知するため、PropertyChangedを発火
             OnPropertyChanged(nameof(CurrentProject));
+        }
+
+        /// <summary>
+        /// テンプレートから新規プロジェクトを作成
+        /// </summary>
+        private async Task NewProjectFromTemplate()
+        {
+            var templateDir = Models.ProjectTemplate.GetTemplateDirectory();
+            var templates = Directory.GetFiles(templateDir, "*.json");
+
+            if (templates.Length == 0)
+            {
+                // テンプレートがない場合はデフォルトを使用
+                var defaultTemplate = Models.ProjectTemplate.CreateDefaultTemplate();
+                Models.ProjectTemplate.SaveTemplate(Path.Combine(templateDir, "デフォルト.json"), defaultTemplate);
+                templates = Directory.GetFiles(templateDir, "*.json");
+            }
+
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Project Template (*.json)|*.json",
+                Title = "テンプレートを選択",
+                InitialDirectory = templateDir
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var template = Models.ProjectTemplate.LoadTemplate(dialog.FileName);
+                if (template != null)
+                {
+                    // テンプレートからプロジェクトを作成
+                    var project = ProjectService.CreateNewProject();
+                    project.Name = template.Name;
+                    project.Width = template.Width;
+                    project.Height = template.Height;
+                    project.FrameRate = template.FrameRate;
+                    project.BackgroundColor = template.BackgroundColor;
+
+                    // トラックを作成
+                    foreach (var trackData in template.Tracks)
+                    {
+                        var track = new Models.TimelineTrack
+                        {
+                            Name = trackData.Name,
+                            BlockColor = trackData.Color
+                        };
+                        project.Tracks.Add(track);
+                    }
+
+                    CurrentProject = project;
+                    CurrentProjectViewModel = new ProjectViewModel(project);
+                    MediaPoolViewModel = new MediaPoolViewModel(project);
+                    _autoSaveService.SetCurrentProject(project);
+
+                    StatusMessage = $"テンプレート '{template.Name}' からプロジェクトを作成";
+                }
+                else
+                {
+                    StatusMessage = "テンプレートの読み込みに失敗しました";
+                }
+            }
+        }
+
+        /// <summary>
+        /// 現在のプロジェクトをテンプレートとして保存
+        /// </summary>
+        private void SaveAsTemplate()
+        {
+            if (_currentProject == null) return;
+
+            var templateDir = Models.ProjectTemplate.GetTemplateDirectory();
+            var dialog = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "Project Template (*.json)|*.json",
+                Title = "テンプレートとして保存",
+                InitialDirectory = templateDir,
+                FileName = _currentProject.Name
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var template = new Models.ProjectTemplate
+                {
+                    Name = _currentProject.Name,
+                    Description = $"テンプレート: {_currentProject.Name}",
+                    Width = _currentProject.Width,
+                    Height = _currentProject.Height,
+                    FrameRate = _currentProject.FrameRate,
+                    BackgroundColor = _currentProject.BackgroundColor,
+                    Tracks = _currentProject.Tracks.Select(t => new Models.TemplateTrack
+                    {
+                        Name = t.Name,
+                        Color = t.BlockColor ?? "#3b82f6"
+                    }).ToList()
+                };
+
+                Models.ProjectTemplate.SaveTemplate(dialog.FileName, template);
+                StatusMessage = $"テンプレートを保存しました: {template.Name}";
+            }
         }
 
         private ExportViewModel? _exportViewModel;

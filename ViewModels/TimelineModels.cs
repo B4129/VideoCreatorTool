@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using VideoCreatorWPF.Models;
 
 namespace VideoCreatorWPF.ViewModels
@@ -95,5 +96,23 @@ namespace VideoCreatorWPF.ViewModels
         public string VideoPath { get; set; } = string.Empty;
         public int StartFrame { get; set; }
         public int Duration { get; set; }
+    }
+
+    /// <summary>
+    /// 波形データポイント
+    /// </summary>
+    public class WaveformDataPoint
+    {
+        public double X { get; set; }
+        public double Amplitude { get; set; }
+    }
+
+    /// <summary>
+    /// 波形表示用データ
+    /// </summary>
+    public class WaveformDisplayData
+    {
+        public List<WaveformDataPoint> Points { get; set; } = new();
+        public double MaxAmplitude { get; set; } = 1.0;
     }
 }

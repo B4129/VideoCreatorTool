@@ -414,6 +414,10 @@ namespace VideoCreatorWPF.Models
         [System.Text.Json.Serialization.JsonIgnore]
         public int DragStartFrame { get; set; }
 
+        // Waveform data (not serialized)
+        [System.Text.Json.Serialization.JsonIgnore]
+        public ViewModels.WaveformDisplayData? WaveformData { get; set; }
+
         // Audio block indicator
         public bool IsAudioBlock => !string.IsNullOrEmpty(AudioPath);
     }
@@ -438,5 +442,17 @@ namespace VideoCreatorWPF.Models
         public bool IsLocked { get; set; }
         public bool IsEnabled { get; set; } = true;
         public ObservableCollection<TimelineBlock> Items { get; set; } = new();
+    }
+
+    /// <summary>
+    /// タイムラインマーカー
+    /// </summary>
+    public class TimelineMarker
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public int Frame { get; set; }
+        public string Name { get; set; } = "";
+        public string Color { get; set; } = "#FF0000";
+        public string Comment { get; set; } = "";
     }
 }

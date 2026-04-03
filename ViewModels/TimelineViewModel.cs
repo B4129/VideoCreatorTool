@@ -28,6 +28,85 @@ namespace VideoCreatorWPF.ViewModels
 
         public event Action<object, TimelineBlock>? BlockSelected;
 
+        /// <summary>
+        /// マーカーを追加
+        /// </summary>
+        public void AddMarker(int frame, string name = "", string color = "#FF0000", string comment = "")
+        {
+            var marker = new Models.TimelineMarker
+            {
+                Frame = frame,
+                Name = name,
+                Color = color,
+                Comment = comment
+            };
+            _project.Markers.Add(marker);
+            MarkAsDirty();
+        }
+
+        /// <summary>
+        /// マーカーを削除
+        /// </summary>
+        public void RemoveMarker(Guid markerId)
+        {
+            var marker = _project.Markers.FirstOrDefault(m => m.Id == markerId);
+            if (marker != null)
+            {
+                _project.Markers.Remove(marker);
+                MarkAsDirty();
+            }
+        }
+
+        /// <summary>
+        /// マーカーをフレーム位置に移動
+        /// </summary>
+        public void MoveMarker(Guid markerId, int newFrame)
+        {
+            var marker = _project.Markers.FirstOrDefault(m => m.Id == markerId);
+            if (marker != null)
+            {
+                marker.Frame = newFrame;
+                MarkAsDirty();
+            }
+        }
+
+        /// <summary>
+        /// 指定フレーム近くのマーカーを取得
+        /// </summary>
+        public Models.TimelineMarker? GetMarkerAtFrame(int frame, int tolerance = 5)
+        {
+            return _project.Markers.FirstOrDefault(m => Math.Abs(m.Frame - frame) <= tolerance);
+        }
+
+        /// <summary>
+        /// 次のマーカーにジャンプ
+        /// </summary>
+        public int? GetNextMarkerFrame(int currentFrame)
+        {
+            var nextMarker = _project.Markers.Where(m => m.Frame > currentFrame).OrderBy(m => m.Frame).FirstOrDefault();
+            return nextMarker?.Frame;
+        }
+
+        /// <summary>
+        /// 前のマーカーにジャンプ
+        /// </summary>
+        public int? GetPreviousMarkerFrame(int currentFrame)
+        {
+            var prevMarker = _project.Markers.Where(m => m.Frame < currentFrame).OrderByDescending(m => m.Frame).FirstOrDefault();
+            return prevMarker?.Frame;
+        }
+
+        /// <summary>
+        /// 変更ありフラグを設定（ProjectViewModelに委譲）
+        /// </summary>
+        private void MarkAsDirty()
+        {
+            // _project is ProjectViewModel, so just call MarkAsDirty
+            // Using reflection to avoid circular dependency
+            var method = _project.GetType().GetMethod("MarkAsDirty");
+            method?.Invoke(_project, null);
+        }
+
         public TimelineViewModel(ProjectViewModel project)
         {
             _project = project;
@@ -815,7 +894,11 @@ namespace VideoCreatorWPF.ViewModels
                 var volume = trackVm?.Volume ?? 1.0;
                 var isMuted = trackVm?.IsMuted ?? false;
 
-                await Services.AudioService.PlayAudioAsync(block.AudioPath, block.Id.ToString(), 0, block.PlaybackSpeed, volume, isMuted);
+                // Get fade parameters from block
+                var audioFadeInFrames = block.AudioFadeInFrames;
+                var audioFadeOutFrames = block.AudioFadeOutFrames;
+
+                await Services.AudioService.PlayAudioAsync(block.AudioPath, block.Id.ToString(), 0, block.PlaybackSpeed, volume, isMuted, audioFadeInFrames, audioFadeOutFrames);
                 System.Diagnostics.Debug.WriteLine($"[Audio] PlayAudioBlockAsync COMPLETED: Id={block.Id}, Volume={volume}, Muted={isMuted}");
             }
             finally

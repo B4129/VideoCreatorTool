@@ -82,6 +82,7 @@ namespace VideoCreatorWPF.Models
         public ObservableCollection<Character> Characters { get; } = new();
         public ObservableCollection<TimelineTrack> Tracks { get; } = new();
         public ObservableCollection<MediaItem> MediaPool { get; } = new();
+        public ObservableCollection<TimelineMarker> Markers { get; } = new();
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime ModifiedAt { get; set; } = DateTime.Now;
     }

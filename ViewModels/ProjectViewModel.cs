@@ -101,6 +101,7 @@ namespace VideoCreatorWPF.ViewModels
 
         public ObservableCollection<Character> Characters => _project.Characters;
         public ObservableCollection<TimelineTrack> Tracks => _project.Tracks;
+        public ObservableCollection<TimelineMarker> Markers => _project.Markers;
 
         public void AddCharacter(Character character)
         {

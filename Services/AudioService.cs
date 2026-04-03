@@ -18,7 +18,7 @@ namespace VideoCreatorWPF.Services
         /// <summary>
         /// Play audio file asynchronously for a specific block
         /// </summary>
-        public static async Task PlayAudioAsync(string audioPath, string blockId, double startPositionSeconds = 0, double playbackSpeed = 1.0, double volume = 1.0, bool isMuted = false)
+        public static async Task PlayAudioAsync(string audioPath, string blockId, double startPositionSeconds = 0, double playbackSpeed = 1.0, double volume = 1.0, bool isMuted = false, int audioFadeInFrames = 0, int audioFadeOutFrames = 0)
         {
             try
             {
@@ -43,13 +43,15 @@ namespace VideoCreatorWPF.Services
                 var track = new AudioTrack
                 {
                     Volume = volume,
-                    IsMuted = isMuted
+                    IsMuted = isMuted,
+                    FadeInFrames = audioFadeInFrames,
+                    FadeOutFrames = audioFadeOutFrames
                 };
                 _audioTracks[blockId] = track;
 
                 var player = new MediaPlayer();
                 player.Open(new Uri(audioPath));
-                player.Volume = isMuted ? 0.0 : volume;
+                player.Volume = isMuted ? 0.0 : (audioFadeInFrames > 0 ? 0.0 : volume);
 
                 // Wait for MediaOpened
                 var tcsOpen = new TaskCompletionSource<bool>();
@@ -85,12 +87,23 @@ namespace VideoCreatorWPF.Services
 
                 player.MediaEnded += (s, e) =>
                 {
+                    // Fade out before ending
+                    if (track.FadeOutFrames > 0)
+                    {
+                        ApplyFadeOut(player, track, track.FadeOutFrames);
+                    }
                     playbackTcs?.TrySetResult(true);
                     _audioTracks.TryRemove(blockId, out _);
                 };
 
                 player.Play();
                 Debug.WriteLine($"[Audio] Playing: {Path.GetFileName(audioPath)} (Block {blockId})");
+
+                // Apply fade in if specified
+                if (track.FadeInFrames > 0)
+                {
+                    ApplyFadeIn(player, track, track.FadeInFrames);
+                }
 
                 // Wait for completion
                 await playbackTcs.Task;
@@ -146,6 +159,57 @@ namespace VideoCreatorWPF.Services
         }
 
         /// <summary>
+        /// Apply fade in effect
+        /// </summary>
+        private static void ApplyFadeIn(MediaPlayer player, AudioTrack track, int fadeFrames)
+        {
+            var fadeDurationMs = fadeFrames * 33; // 30fps = 33ms per frame
+            var startTime = DateTime.Now;
+            var startVolume = 0.0;
+            var endVolume = track.Volume;
+
+            var timer = new System.Threading.Timer(state =>
+            {
+                var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
+                var progress = Math.Min(1.0, elapsed / fadeDurationMs);
+                var currentVolume = startVolume + (endVolume - startVolume) * progress;
+
+                player.Volume = currentVolume;
+
+                if (progress >= 1.0)
+                {
+                    ((System.Threading.Timer)state).Dispose();
+                }
+            }, null, 0, 16); // Update every 16ms for smooth fade
+        }
+
+        /// <summary>
+        /// Apply fade out effect
+        /// </summary>
+        private static void ApplyFadeOut(MediaPlayer player, AudioTrack track, int fadeFrames)
+        {
+            var fadeDurationMs = fadeFrames * 33; // 30fps = 33ms per frame
+            var startTime = DateTime.Now;
+            var startVolume = player.Volume;
+            var endVolume = 0.0;
+
+            var timer = new System.Threading.Timer(state =>
+            {
+                var elapsed = (DateTime.Now - startTime).TotalMilliseconds;
+                var progress = Math.Min(1.0, elapsed / fadeDurationMs);
+                var currentVolume = startVolume - (startVolume - endVolume) * progress;
+
+                player.Volume = currentVolume;
+
+                if (progress >= 1.0)
+                {
+                    ((System.Threading.Timer)state).Dispose();
+                    player.Volume = 0.0;
+                }
+            }, null, 0, 16); // Update every 16ms for smooth fade
+        }
+
+        /// <summary>
         /// Stop playback at a specific frame (called when timeline position changes)
         /// </summary>
         public static void StopAudiosAtFrame(int frame)
@@ -171,6 +235,10 @@ namespace VideoCreatorWPF.Services
             public TaskCompletionSource<bool> PlaybackTcs { get; set; } = null!;
             public double Volume { get; set; } = 1.0;
             public bool IsMuted { get; set; }
+            public int FadeInFrames { get; set; } = 0;
+            public int FadeOutFrames { get; set; } = 0;
+            public bool IsFadingIn { get; set; } = false;
+            public bool IsFadingOut { get; set; } = false;
         }
     }
 }
