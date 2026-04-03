@@ -69,6 +69,9 @@ namespace VideoCreatorWPF.Services
                     // Play the audio
                     player.Play();
                     Debug.WriteLine($"[Audio] Play() called for: {Path.GetFileName(audioPath)} at {playbackSpeed}x speed");
+
+                    // Verify speed was set
+                    Debug.WriteLine($"[Audio] Actual SpeedRatio: {player.SpeedRatio}");
                 };
 
                 player.Open(new Uri(audioPath));
