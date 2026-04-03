@@ -341,6 +341,7 @@ namespace VideoCreatorWPF.ViewModels
         }
 
         private System.Threading.Timer? _playTimer;
+        private HashSet<Guid> _playingAudioBlocks = new(); // 現在再生中の音声ブロック
 
         /// <summary>
         /// 再生/一時停止をトグル
@@ -368,12 +369,17 @@ namespace VideoCreatorWPF.ViewModels
             }
 
             IsPlaying = true;
+            _playingAudioBlocks.Clear(); // 再生開始時にクリア
+
             _playTimer = new System.Threading.Timer(_ =>
             {
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     if (CurrentFrame < TotalFrames)
                     {
+                        // 現在のフレーム位置的な音声ブロックをチェック
+                        CheckAndPlayAudioBlocksAtCurrentFrame();
+
                         CurrentFrame++;
                     }
                     else
@@ -384,11 +390,45 @@ namespace VideoCreatorWPF.ViewModels
             }, null, 0, (int)(1000.0 / _project.FrameRate));
         }
 
+        /// <summary>
+        /// 現在のフレーム位置にある音声ブロックを再生
+        /// </summary>
+        private void CheckAndPlayAudioBlocksAtCurrentFrame()
+        {
+            foreach (var track in _tracks)
+            {
+                foreach (var block in track.Items)
+                {
+                    // 音声ブロックで、現在のフレームが開始位置かチェック
+                    if (block.Type == BlockType.Audio &&
+                        block.StartFrame == CurrentFrame &&
+                        !string.IsNullOrEmpty(block.AudioPath) &&
+                        !_playingAudioBlocks.Contains(block.Id))
+                    {
+                        // 音声ファイルを非同期で再生
+                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath);
+                        _playingAudioBlocks.Add(block.Id);
+
+                        System.Diagnostics.Debug.WriteLine($"[Audio] Playing audio block at frame {CurrentFrame}: {block.AudioPath}");
+                    }
+
+                    // 再生終了したブロックをクリーニング
+                    if (block.Type == BlockType.Audio &&
+                        _playingAudioBlocks.Contains(block.Id) &&
+                        CurrentFrame >= block.StartFrame + block.Duration)
+                    {
+                        _playingAudioBlocks.Remove(block.Id);
+                    }
+                }
+            }
+        }
+
         private void Pause()
         {
             IsPlaying = false;
             _playTimer?.Dispose();
             _playTimer = null;
+            _playingAudioBlocks.Clear(); // 一時停止時に再生中リストをクリア
         }
 
         private void Stop()
@@ -397,6 +437,7 @@ namespace VideoCreatorWPF.ViewModels
             _playTimer?.Dispose();
             _playTimer = null;
             CurrentFrame = 0;
+            _playingAudioBlocks.Clear(); // 停止時に再生中リストをクリア
         }
 
         private void GoToStart()
