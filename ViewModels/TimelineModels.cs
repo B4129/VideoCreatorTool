@@ -26,6 +26,37 @@ namespace VideoCreatorWPF.ViewModels
     }
 
     /// <summary>
+    /// Data for property change undo/redo action
+    /// </summary>
+    public class PropertyChangeData
+    {
+        public object Target { get; set; } = null!;
+        public string PropertyName { get; set; } = string.Empty;
+        public object? OldValue { get; set; }
+        public object? NewValue { get; set; }
+    }
+
+    /// <summary>
+    /// Data for text edit undo/redo action
+    /// </summary>
+    public class TextEditData
+    {
+        public TimelineBlock Block { get; set; } = null!;
+        public string OldText { get; set; } = string.Empty;
+        public string NewText { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Data for track operation undo/redo action
+    /// </summary>
+    public class TrackOperationData
+    {
+        public TimelineTrackViewModel? Track { get; set; }
+        public Models.TimelineTrack? ModelTrack { get; set; }
+        public int Index { get; set; }
+    }
+
+    /// <summary>
     /// Represents an undo/redo action in the timeline
     /// </summary>
     public class TimelineAction

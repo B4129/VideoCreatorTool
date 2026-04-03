@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -26,6 +27,7 @@ namespace VideoCreatorWPF.ViewModels
         private MediaPoolViewModel? _mediaPoolViewModel;
         private BlockPropertyViewModel _blockProperties = new();
         private AppSettings _settings = new();
+        private ObservableCollection<string> _recentProjects = new();
 
         // Version information
         public string AppVersion { get; } = GetAppVersion();
@@ -38,6 +40,9 @@ namespace VideoCreatorWPF.ViewModels
             {
                 StatusMessage = $"自動保存完了: {System.IO.Path.GetFileName(path)}";
             };
+
+            // 最近開いたファイル履歴をロード
+            LoadRecentProjects();
 
             CheckVoiceVoxStatusCommand = new RelayCommand(async _ => await CheckStatusAsync());
             OpenSettingsCommand = new RelayCommand(async _ => await OpenSettingsInternal());
@@ -106,6 +111,15 @@ namespace VideoCreatorWPF.ViewModels
         {
             get => _blockProperties;
             set => SetProperty(ref _blockProperties, value);
+        }
+
+        /// <summary>
+        /// 最近開いたファイル履歴
+        /// </summary>
+        public ObservableCollection<string> RecentProjects
+        {
+            get => _recentProjects;
+            set => SetProperty(ref _recentProjects, value);
         }
 
         public ICommand CheckVoiceVoxStatusCommand { get; }
@@ -219,6 +233,9 @@ namespace VideoCreatorWPF.ViewModels
                     _autoSaveService.SetCurrentProject(project);
                     StatusMessage = $"プロジェクトを開きました: {project.Name}";
                     _eventBus.Publish(new ProjectLoadedEvent(dialog.FileName));
+
+                    // 履歴に追加
+                    AddToRecentProjects(dialog.FileName);
                 }
                 else
                 {
@@ -264,6 +281,7 @@ namespace VideoCreatorWPF.ViewModels
                 if (result)
                 {
                     _eventBus.Publish(new ProjectSavedEvent(dialog.FileName));
+                    AddToRecentProjects(dialog.FileName);
                 }
             }
         }
@@ -344,6 +362,80 @@ namespace VideoCreatorWPF.ViewModels
         public void SetExportViewModel(ExportViewModel vm)
         {
             _exportViewModel = vm;
+        }
+
+        /// <summary>
+        /// 最近開いたファイル履歴をロード
+        /// </summary>
+        private void LoadRecentProjects()
+        {
+            try
+            {
+                var recentFile = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "VideoCreator", "recent.txt");
+
+                if (System.IO.File.Exists(recentFile))
+                {
+                    var lines = System.IO.File.ReadAllLines(recentFile);
+                    _recentProjects = new ObservableCollection<string>(
+                        lines.Where(l => !string.IsNullOrWhiteSpace(l) && System.IO.File.Exists(l))
+                             .Take(10)); // 最新10件まで
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"最近のプロジェクト読み込みエラー: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 最近開いたファイル履歴に追加
+        /// </summary>
+        public void AddToRecentProjects(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+                return;
+
+            // 既存のエントリーを削除
+            _recentProjects.Remove(filePath);
+
+            // 先頭に追加
+            _recentProjects.Insert(0, filePath);
+
+            // 10件以上に制限
+            while (_recentProjects.Count > 10)
+            {
+                _recentProjects.RemoveAt(_recentProjects.Count - 1);
+            }
+
+            // ファイルに保存
+            SaveRecentProjects();
+        }
+
+        /// <summary>
+        /// 最近開いたファイル履歴を保存
+        /// </summary>
+        private void SaveRecentProjects()
+        {
+            try
+            {
+                var recentDir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "VideoCreator");
+
+                if (!System.IO.Directory.Exists(recentDir))
+                {
+                    System.IO.Directory.CreateDirectory(recentDir);
+                }
+
+                var recentFile = System.IO.Path.Combine(recentDir, "recent.txt");
+                System.IO.File.WriteAllLines(recentFile, _recentProjects);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"最近のプロジェクト保存エラー: {ex.Message}");
+            }
         }
 
         public void Dispose()

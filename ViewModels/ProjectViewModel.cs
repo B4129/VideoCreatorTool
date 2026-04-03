@@ -12,6 +12,7 @@ namespace VideoCreatorWPF.ViewModels
         private int _width;
         private int _height;
         private double _frameRate;
+        private bool _isDirty;
 
         public ProjectViewModel(VideoProject project)
         {
@@ -20,6 +21,7 @@ namespace VideoCreatorWPF.ViewModels
             _width = project.Width;
             _height = project.Height;
             _frameRate = project.FrameRate;
+            _isDirty = false;
         }
 
         public string ProjectName
@@ -30,7 +32,7 @@ namespace VideoCreatorWPF.ViewModels
                 if (SetProperty(ref _projectName, value))
                 {
                     _project.Name = value;
-                    _project.ModifiedAt = DateTime.Now;
+                    MarkAsDirty();
                 }
             }
         }
@@ -38,19 +40,63 @@ namespace VideoCreatorWPF.ViewModels
         public int Width
         {
             get => _width;
-            set => SetProperty(ref _width, value);
+            set
+            {
+                if (SetProperty(ref _width, value))
+                {
+                    MarkAsDirty();
+                }
+            }
         }
 
         public int Height
         {
             get => _height;
-            set => SetProperty(ref _height, value);
+            set
+            {
+                if (SetProperty(ref _height, value))
+                {
+                    MarkAsDirty();
+                }
+            }
         }
 
         public double FrameRate
         {
             get => _frameRate;
-            set => SetProperty(ref _frameRate, value);
+            set
+            {
+                if (SetProperty(ref _frameRate, value))
+                {
+                    MarkAsDirty();
+                }
+            }
+        }
+
+        /// <summary>
+        /// プロジェクトに変更があるかどうか
+        /// </summary>
+        public bool IsDirty
+        {
+            get => _isDirty;
+            set => SetProperty(ref _isDirty, value);
+        }
+
+        /// <summary>
+        /// 変更ありフラグを設定
+        /// </summary>
+        public void MarkAsDirty()
+        {
+            IsDirty = true;
+            _project.ModifiedAt = DateTime.Now;
+        }
+
+        /// <summary>
+        /// 変更なしフラグにリセット
+        /// </summary>
+        public void MarkAsClean()
+        {
+            IsDirty = false;
         }
 
         public ObservableCollection<Character> Characters => _project.Characters;
@@ -59,6 +105,7 @@ namespace VideoCreatorWPF.ViewModels
         public void AddCharacter(Character character)
         {
             Characters.Add(character);
+            MarkAsDirty();
         }
 
         public void RemoveCharacter(Guid characterId)
@@ -67,6 +114,7 @@ namespace VideoCreatorWPF.ViewModels
             if (character != null)
             {
                 Characters.Remove(character);
+                MarkAsDirty();
             }
         }
     }

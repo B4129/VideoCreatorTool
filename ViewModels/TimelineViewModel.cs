@@ -327,12 +327,13 @@ namespace VideoCreatorWPF.ViewModels
         {
             if (track == null || _tracks.Count <= 1) return;
 
+            var index = _tracks.IndexOf(track);
             var modelTrack = _project.Tracks.FirstOrDefault(t => t.Name == track.Name);
             if (modelTrack != null)
             {
                 _project.Tracks.Remove(modelTrack);
                 _tracks.Remove(track);
-                RecordUndo("RemoveTrack", new { Track = track, ModelTrack = modelTrack });
+                RecordTrackRemove(track, modelTrack, index);
             }
         }
 
@@ -437,6 +438,43 @@ namespace VideoCreatorWPF.ViewModels
 
             // Clear selection
             SelectedBlocks.Clear();
+        }
+
+        /// <summary>
+        /// ブロック追加を記録
+        /// </summary>
+        public void RecordBlockAdd(TimelineTrackViewModel track, TimelineBlock block)
+        {
+            RecordUndo("AddBlock", block);
+        }
+
+        /// <summary>
+        /// ブロック削除を記録
+        /// </summary>
+        public void RecordBlockDelete(TimelineTrackViewModel track, TimelineBlock block)
+        {
+            var index = track.Items.IndexOf(block);
+            var data = new DeleteBlockData
+            {
+                Track = track,
+                Block = block,
+                Index = index
+            };
+            RecordUndo("DeleteBlock", data);
+        }
+
+        /// <summary>
+        /// テキスト編集を記録
+        /// </summary>
+        public void RecordTextEdit(TimelineBlock block, string oldText, string newText)
+        {
+            var data = new TextEditData
+            {
+                Block = block,
+                OldText = oldText,
+                NewText = newText
+            };
+            RecordUndo("TextEdit", data);
         }
 
         // Multi-selection support
@@ -625,7 +663,9 @@ namespace VideoCreatorWPF.ViewModels
             };
 
             _project.Tracks.Add(track);
-            Tracks.Add(new TimelineTrackViewModel(track));
+            var trackVm = new TimelineTrackViewModel(track);
+            Tracks.Add(trackVm);
+            RecordTrackAdd(trackVm, track);
         }
 
         /// <summary>
@@ -701,6 +741,46 @@ namespace VideoCreatorWPF.ViewModels
                         deleteData.Track.Items.Insert(deleteData.Index, deleteData.Block);
                     }
                     break;
+                case "PropertyChange":
+                    if (action.Data is PropertyChangeData propData)
+                    {
+                        var prop = propData.Target.GetType().GetProperty(propData.PropertyName);
+                        prop?.SetValue(propData.Target, propData.OldValue);
+                    }
+                    break;
+                case "TextEdit":
+                    if (action.Data is TextEditData textData)
+                    {
+                        textData.Block.Text = textData.OldText;
+                    }
+                    break;
+                case "AddTrack":
+                    if (action.Data is TrackOperationData trackAddData)
+                    {
+                        if (trackAddData.Track != null)
+                        {
+                            _tracks.Remove(trackAddData.Track);
+                            if (trackAddData.ModelTrack != null)
+                            {
+                                _project.Tracks.Remove(trackAddData.ModelTrack);
+                            }
+                        }
+                    }
+                    break;
+                case "RemoveTrack":
+                    if (action.Data is TrackOperationData trackRemoveData)
+                    {
+                        if (trackRemoveData.Track != null && trackRemoveData.ModelTrack != null)
+                        {
+                            var index = trackRemoveData.Index;
+                            if (index >= 0 && index <= _tracks.Count)
+                            {
+                                _tracks.Insert(index, trackRemoveData.Track);
+                                _project.Tracks.Insert(index, trackRemoveData.ModelTrack);
+                            }
+                        }
+                    }
+                    break;
             }
 
             _redoStack.Add(action);
@@ -740,6 +820,46 @@ namespace VideoCreatorWPF.ViewModels
                         deleteData.Track.Items.Remove(deleteData.Block);
                     }
                     break;
+                case "PropertyChange":
+                    if (action.Data is PropertyChangeData propData)
+                    {
+                        var prop = propData.Target.GetType().GetProperty(propData.PropertyName);
+                        prop?.SetValue(propData.Target, propData.NewValue);
+                    }
+                    break;
+                case "TextEdit":
+                    if (action.Data is TextEditData textData)
+                    {
+                        textData.Block.Text = textData.NewText;
+                    }
+                    break;
+                case "AddTrack":
+                    if (action.Data is TrackOperationData trackAddData)
+                    {
+                        if (trackAddData.Track != null && trackAddData.ModelTrack != null)
+                        {
+                            var index = trackAddData.Index;
+                            if (index >= 0 && index <= _tracks.Count)
+                            {
+                                _tracks.Insert(index, trackAddData.Track);
+                                _project.Tracks.Insert(index, trackAddData.ModelTrack);
+                            }
+                        }
+                    }
+                    break;
+                case "RemoveTrack":
+                    if (action.Data is TrackOperationData trackRemoveData)
+                    {
+                        if (trackRemoveData.Track != null)
+                        {
+                            _tracks.Remove(trackRemoveData.Track);
+                            if (trackRemoveData.ModelTrack != null)
+                            {
+                                _project.Tracks.Remove(trackRemoveData.ModelTrack);
+                            }
+                        }
+                    }
+                    break;
             }
 
             _undoStack.Add(action);
@@ -753,6 +873,49 @@ namespace VideoCreatorWPF.ViewModels
             _redoStack.Clear();
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
+        }
+
+        /// <summary>
+        /// プロパティ変更を記録
+        /// </summary>
+        public void RecordPropertyChange(object target, string propertyName, object? oldValue, object? newValue)
+        {
+            var data = new PropertyChangeData
+            {
+                Target = target,
+                PropertyName = propertyName,
+                OldValue = oldValue,
+                NewValue = newValue
+            };
+            RecordUndo("PropertyChange", data);
+        }
+
+        /// <summary>
+        /// トラック追加を記録
+        /// </summary>
+        public void RecordTrackAdd(TimelineTrackViewModel trackVm, Models.TimelineTrack modelTrack)
+        {
+            var data = new TrackOperationData
+            {
+                Track = trackVm,
+                ModelTrack = modelTrack,
+                Index = _tracks.Count - 1
+            };
+            RecordUndo("AddTrack", data);
+        }
+
+        /// <summary>
+        /// トラック削除を記録
+        /// </summary>
+        public void RecordTrackRemove(TimelineTrackViewModel trackVm, Models.TimelineTrack modelTrack, int index)
+        {
+            var data = new TrackOperationData
+            {
+                Track = trackVm,
+                ModelTrack = modelTrack,
+                Index = index
+            };
+            RecordUndo("RemoveTrack", data);
         }
     }
 }

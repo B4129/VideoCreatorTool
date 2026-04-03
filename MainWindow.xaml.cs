@@ -29,6 +29,9 @@ namespace VideoCreatorWPF
             ViewModel = new MainWindowViewModel();
             DataContext = ViewModel;
 
+            // 閉じる時のイベントハンドラを登録
+            Closing += MainWindow_Closing;
+
             // 自動保存タイマーを開始
             StartAutoSaveTimer();
 
@@ -568,6 +571,39 @@ namespace VideoCreatorWPF
             }
         }
 
+        // ウィンドウ閉じる時のイベントハンドラ
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // プロジェクトに変更があるかチェック
+            if (ViewModel.CurrentProjectViewModel?.IsDirty == true)
+            {
+                var result = MessageBox.Show(
+                    "プロジェクトに変更があります。保存せずに閉じますか？\n\n" +
+                    "[OK] 保存して閉じる\n" +
+                    "[キャンセル] 閉じない\n" +
+                    "[いいえ] 保存せずに閉じる",
+                    "確認",
+                    MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question);
+
+                switch (result)
+                {
+                    case MessageBoxResult.Yes:
+                        // 保存して閉じる
+                        e.Cancel = true;
+                        _ = SaveProject();
+                        return;
+                    case MessageBoxResult.Cancel:
+                        // 閉じない
+                        e.Cancel = true;
+                        return;
+                    case MessageBoxResult.No:
+                        // 保存せずに閉じる
+                        break;
+                }
+            }
+        }
+
         // ウィンドウ読み込み時にスクリーンショットを自動撮影
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
@@ -802,6 +838,35 @@ namespace VideoCreatorWPF
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Auto-save error: {ex.Message}");
+            }
+        }
+
+        // プロジェクトを保存（ユーザー呼び出し用）
+        private async Task SaveProject()
+        {
+            try
+            {
+                if (ViewModel.CurrentProjectViewModel == null) return;
+
+                var dialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "Video Creator Project|*.vcproj|JSON|*.json",
+                    FileName = string.IsNullOrEmpty(_currentProjectPath) ? "Untitled.vcproj" : Path.GetFileName(_currentProjectPath),
+                    InitialDirectory = string.IsNullOrEmpty(_currentProjectPath) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : Path.GetDirectoryName(_currentProjectPath)
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    _currentProjectPath = dialog.FileName;
+                    await SaveProjectToJson(_currentProjectPath);
+                    ViewModel.CurrentProjectViewModel?.MarkAsClean();
+                    ViewModel.StatusMessage = $"プロジェクトを保存しました: {Path.GetFileName(_currentProjectPath)}";
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewModel.StatusMessage = $"保存エラー: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"Save project error: {ex.Message}");
             }
         }
 
