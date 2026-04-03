@@ -40,14 +40,17 @@ namespace VideoCreatorWPF
                     {
                         _timelineViewModel = new TimelineViewModel(ViewModel.CurrentProjectViewModel);
                         TimelineViewControl.DataContext = _timelineViewModel;
-                        PreviewViewControl.DataContext = new PreviewViewModel(ViewModel.CurrentProjectViewModel);
+                        var previewVm = new PreviewViewModel(ViewModel.CurrentProjectViewModel);
+                        PreviewViewControl.DataContext = previewVm;
 
-                        // Subscribe to CurrentFrame changes to update playhead
+                        // Subscribe to CurrentFrame changes to update playhead and preview
                         _timelineViewModel.PropertyChanged += (s, args) =>
                         {
                             if (args.PropertyName == nameof(TimelineViewModel.CurrentFrame))
                             {
                                 TimelineViewControl.RefreshPlayhead();
+                                // プレビューを更新
+                                previewVm.UpdateFrame(_timelineViewModel.CurrentFrame);
                             }
                         };
 

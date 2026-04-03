@@ -22,6 +22,8 @@ namespace VideoCreatorWPF.ViewModels
         private double _currentPosition;
         private double _duration;
         private MediaPlayer? _mediaPlayer;
+        private string? _currentVideoPath;
+        private int _currentVideoStartFrame;
 
         public PreviewViewModel(ProjectViewModel project)
         {
@@ -29,6 +31,97 @@ namespace VideoCreatorWPF.ViewModels
             PlayCommand = new RelayCommand(_ => Play(), _ => true);
             PauseCommand = new RelayCommand(_ => Pause(), _ => true);
             StopCommand = new RelayCommand(_ => Stop(), _ => true);
+        }
+
+        /// <summary>
+        /// プレイヘッド位置にある動画ブロックのパスを取得
+        /// </summary>
+        public string? CurrentVideoPath
+        {
+            get => _currentVideoPath;
+            set => SetProperty(ref _currentVideoPath, value);
+        }
+
+        /// <summary>
+        /// プレイヘッド位置にある動画ブロックの開始フレーム
+        /// </summary>
+        public int CurrentVideoStartFrame
+        {
+            get => _currentVideoStartFrame;
+            set => SetProperty(ref _currentVideoStartFrame, value);
+        }
+
+        /// <summary>
+        /// プレイヘッド位置にある全てのテキストブロック
+        /// </summary>
+        public IEnumerable<TimelineBlock> CurrentTextBlocks
+        {
+            get
+            {
+                foreach (var track in _project.Tracks)
+                {
+                    foreach (var block in track.Items)
+                    {
+                        // 動画ブロックはスキップ（CurrentVideoPathで処理）
+                        if (block.Type == BlockType.Video) continue;
+
+                        // プレイヘッド位置にテキストがあるかチェック
+                        if (_currentFrame >= block.StartFrame && _currentFrame < block.StartFrame + block.Duration)
+                        {
+                            yield return block;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// プレイヘッド位置を更新して関連プロパティも更新
+        /// </summary>
+        public void UpdateFrame(int frame)
+        {
+            CurrentFrame = frame;
+
+            // プレイヘッド位置の動画ブロックを探す
+            TimelineBlock? videoBlock = null;
+            foreach (var track in _project.Tracks)
+            {
+                foreach (var block in track.Items)
+                {
+                    if (block.Type == BlockType.Video &&
+                        frame >= block.StartFrame && frame < block.StartFrame + block.Duration)
+                    {
+                        videoBlock = block;
+                        break;
+                    }
+                }
+                if (videoBlock != null) break;
+            }
+
+            if (videoBlock != null)
+            {
+                CurrentVideoPath = videoBlock.AudioPath;
+                CurrentVideoStartFrame = videoBlock.StartFrame;
+            }
+            else
+            {
+                CurrentVideoPath = null;
+                CurrentVideoStartFrame = 0;
+            }
+
+            // テキストブロックの更新を通知
+            OnPropertyChanged(nameof(CurrentTextBlocks));
+
+            // 現在のテキストを最初のブロックから取得
+            var textBlock = CurrentTextBlocks.FirstOrDefault();
+            if (textBlock != null)
+            {
+                CurrentText = textBlock.Text;
+            }
+            else
+            {
+                CurrentText = "";
+            }
         }
 
         public ImageSource? PreviewImage

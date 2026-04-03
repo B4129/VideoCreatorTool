@@ -23,10 +23,15 @@
             <!-- Preview display area -->
             <Grid Grid.Row="0" x:Name="PreviewGrid" Background="Black" AllowDrop="True"
                   Drop="PreviewGrid_Drop" DragOver="PreviewGrid_DragOver">
-                <!-- Video display -->
+                <!-- Video display for timeline blocks -->
                 <MediaElement x:Name="VideoPlayer" Stretch="Uniform"
                               LoadedBehavior="Manual" UnloadedBehavior="Stop"
-                              ScrubbingEnabled="True"/>
+                              ScrubbingEnabled="True"
+                              Visibility="{Binding CurrentVideoPath, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <!-- Fallback: black background when no video -->
+                <Grid Background="Black"
+                      Visibility="{Binding CurrentVideoPath, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
 
                 <!-- Canvas for overlays (grid, safe area, onion skin) -->
                 <Canvas x:Name="OverlayCanvas" IsHitTestVisible="False">
@@ -59,9 +64,17 @@
                 <!-- Subtitle overlay -->
                 <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
                         Background="#80000000" Padding="10" Margin="20,0,20,20">
-                    <TextBlock Text="{Binding CurrentText}" Foreground="White"
-                               FontSize="16" HorizontalAlignment="Center"
-                               TextWrapping="Wrap"/>
+                    <ItemsControl ItemsSource="{Binding CurrentTextBlocks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Text}" Foreground="White"
+                                           FontSize="{Binding FontSize}"
+                                           FontFamily="{Binding FontFamily}"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </Border>
 
                 <!-- Drop hint -->

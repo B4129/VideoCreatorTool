@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows;
 
 namespace VideoCreatorWPF.Views
 {
@@ -17,6 +18,53 @@ namespace VideoCreatorWPF.Views
             // Setup MediaElement event handlers
             VideoPlayer.MediaOpened += VideoPlayer_MediaOpened;
             VideoPlayer.MediaEnded += VideoPlayer_MediaEnded;
+
+            // DataContext の変更を監視
+            DataContextChanged += PreviewView_DataContextChanged;
+        }
+
+        private void PreviewView_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.NewValue is ViewModels.PreviewViewModel vm)
+            {
+                vm.PropertyChanged += PreviewViewModel_PropertyChanged;
+            }
+        }
+
+        private void PreviewViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ViewModels.PreviewViewModel.CurrentVideoPath))
+            {
+                if (DataContext is ViewModels.PreviewViewModel vm && vm.CurrentVideoPath != null)
+                {
+                    // 動画パスが変更されたら読み込み
+                    if (_lastVideoPath != vm.CurrentVideoPath)
+                    {
+                        _lastVideoPath = vm.CurrentVideoPath;
+                        VideoPlayer.Source = new Uri(vm.CurrentVideoPath);
+                        VideoPlayer.Position = TimeSpan.Zero;
+                    }
+
+                    // 現在のフレーム位置にシーク
+                    if (_lastVideoPath != null)
+                    {
+                        var fps = 30.0;
+                        var offsetFrames = vm.CurrentFrame - vm.CurrentVideoStartFrame;
+                        var positionSeconds = offsetFrames / fps;
+                        if (positionSeconds >= 0)
+                        {
+                            VideoPlayer.Position = TimeSpan.FromSeconds(positionSeconds);
+                            VideoPlayer.Pause(); // 再生せずにシークのみ
+                        }
+                    }
+                }
+                else
+                {
+                    // 動画がない場合はクリア
+                    VideoPlayer.Source = null;
+                    _lastVideoPath = null;
+                }
+            }
         }
 
         /// <summary>
@@ -197,6 +245,11 @@ namespace VideoCreatorWPF.Views
         private ViewModels.TimelineTrackViewModel? _pendingTrackForBlock;
         private ViewModels.TimelineViewModel? _pendingTimelineVmForBlock;
         private MainWindow? _pendingMainWindowForBlock;
+
+        // プレビュー更新用のタイマー
+        private System.Threading.Timer? _previewUpdateTimer;
+        private string? _lastVideoPath;
+        private int _lastVideoFrame;
 
         private void PreviewGrid_Drop(object sender, DragEventArgs e)
         {
