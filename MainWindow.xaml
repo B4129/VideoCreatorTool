@@ -15,6 +15,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="320"/>
@@ -96,8 +97,14 @@
             </Border>
         </Grid>
 
+        <!-- Status log bar -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="15,6">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextSecondaryBrush}"
+                       FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
+        </Border>
+
         <!-- Bottom subtitle input bar -->
-        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource AcrylicSurface}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="15,12">
+        <Border Grid.Row="3" Grid.ColumnSpan="2" Background="{StaticResource AcrylicSurface}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="15,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="160"/>

@@ -246,10 +246,16 @@ namespace VideoCreatorWPF
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // UIが完全に描画されるのを待つ
-            await Task.Delay(1000);
+            await Task.Delay(2000);
 
-            // DispatcherでUIスレッドで実行
-            await Dispatcher.InvokeAsync(() => TakeScreenshot());
+            await Dispatcher.InvokeAsync(() =>
+            {
+                // ssフォルダ用（既存）
+                TakeScreenshot();
+
+                // docsフォルダ用 - README用スクリーンショット
+                TakeDocScreenshot("screenshot_main");
+            });
         }
 
         // スクリーンショットを撮影して保存（最新1つだけ）
@@ -257,38 +263,30 @@ namespace VideoCreatorWPF
         {
             try
             {
-                // ウィンドウ全体のサイズを取得
                 var width = (int)ActualWidth;
                 var height = (int)ActualHeight;
 
                 if (width <= 0 || height <= 0) return;
 
-                // レンダーターゲットビットマップを作成
                 var renderTarget = new RenderTargetBitmap(
                     width, height, 96, 96, PixelFormats.Pbgra32);
-
-                // ウィンドウをビットマップにレンダリング
                 renderTarget.Render(this);
 
-                // PNGエンコーダーで保存
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(renderTarget));
 
-                // 保存先ディレクトリ (ssフォルダ)
                 var ssDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\ss";
                 if (!Directory.Exists(ssDir))
                 {
                     Directory.CreateDirectory(ssDir);
                 }
 
-                // 古いスクリーンショットを削除
                 var oldFiles = Directory.GetFiles(ssDir, "SS_*.png");
                 foreach (var f in oldFiles)
                 {
                     File.Delete(f);
                 }
 
-                // ファイル名: SS_YYYYMMDD_HHMMSS.png
                 var fileName = $"SS_{DateTime.Now:yyyyMMdd_HHmmss}.png";
                 var filePath = Path.Combine(ssDir, fileName);
 
@@ -297,11 +295,58 @@ namespace VideoCreatorWPF
                     encoder.Save(fs);
                 }
 
-                System.Diagnostics.Debug.WriteLine($"Screenshot saved to: {filePath}");
+                ViewModel.StatusMessage = $"ss\\{fileName} に保存";
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Screenshot error: {ex.Message}");
+            }
+        }
+
+        // ドキュメント用スクリーンショットを撮影
+        public void TakeDocScreenshot(string screenshotName)
+        {
+            try
+            {
+                // 少し待ってUIが完全に描画されるのを待つ
+                System.Threading.Thread.Sleep(500);
+
+                var width = (int)ActualWidth;
+                var height = (int)ActualHeight;
+
+                if (width <= 0 || height <= 0)
+                {
+                    System.Diagnostics.Debug.WriteLine("TakeDocScreenshot: Invalid window size");
+                    return;
+                }
+
+                var renderTarget = new RenderTargetBitmap(
+                    width, height, 96, 96, PixelFormats.Pbgra32);
+                renderTarget.Render(this);
+
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(renderTarget));
+
+                // docsフォルダに保存
+                var docsDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\docs";
+                if (!Directory.Exists(docsDir))
+                {
+                    Directory.CreateDirectory(docsDir);
+                }
+
+                var filePath = Path.Combine(docsDir, $"{screenshotName}.png");
+                using (var fs = new FileStream(filePath, FileMode.Create))
+                {
+                    encoder.Save(fs);
+                }
+
+                ViewModel.StatusMessage = $"スクリーンショットを保存: docs\\{screenshotName}.png";
+                System.Diagnostics.Debug.WriteLine($"Doc screenshot saved to: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                ViewModel.StatusMessage = $"スクリーンショットエラー: {ex.Message}";
+                System.Diagnostics.Debug.WriteLine($"Doc screenshot error: {ex.Message}");
             }
         }
 
