@@ -206,11 +206,12 @@ namespace VideoCreatorWPF.Views
                         _pendingMainWindowForBlock = null;
                     }
 
-                    // Start playback from current position
+                    // Start playback from current position with normal speed
                     VideoPlayer.Position = TimeSpan.Zero;
+                    VideoPlayer.SpeedRatio = 1.0; // Normal playback speed
                     VideoPlayer.Play();
                     _isPlaying = true;
-                    Debug.WriteLine("[Preview] Starting video playback");
+                    Debug.WriteLine("[Preview] Starting video playback at 1x speed");
                 }
                 else
                 {

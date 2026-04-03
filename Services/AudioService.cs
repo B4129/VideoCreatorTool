@@ -10,12 +10,16 @@ namespace VideoCreatorWPF.Services
     public class AudioService
     {
         private static ConcurrentDictionary<string, MediaPlayer> _players = new();
+        private static object _lockObj = new object();
 
         public static async Task PlayAudioAsync(string audioPath, double startPositionSeconds = 0, double playbackSpeed = 1.0)
         {
+            string playerId = $"{audioPath}_{Guid.NewGuid()}";
+            MediaPlayer? player = null;
+
             try
             {
-                Debug.WriteLine($"[Audio] PlayAudioAsync called: {audioPath} (speed: {playbackSpeed})");
+                Debug.WriteLine($"[Audio] PlayAudioAsync called: {audioPath} (speed: {playbackSpeed}, id: {playerId})");
 
                 if (!File.Exists(audioPath))
                 {
@@ -23,21 +27,21 @@ namespace VideoCreatorWPF.Services
                     return;
                 }
 
-                // Stop current playback of this audio if any
-                StopAudio(audioPath);
+                player = new MediaPlayer();
 
-                var player = new MediaPlayer();
-                _players[audioPath] = player;
+                // Use lock to prevent race conditions
+                lock (_lockObj)
+                {
+                    _players[playerId] = player;
+                }
 
-                // Set completed event
+                // Set completed event handler
                 var tcs = new TaskCompletionSource<bool>();
-                bool completed = false;
 
                 // Subscribe to MediaEnded
                 player.MediaEnded += (s, e) =>
                 {
-                    Debug.WriteLine($"[Audio] MediaEnded: {Path.GetFileName(audioPath)}");
-                    completed = true;
+                    Debug.WriteLine($"[Audio] MediaEnded: {playerId}");
                     tcs.TrySetResult(true);
                 };
 
@@ -69,15 +73,28 @@ namespace VideoCreatorWPF.Services
 
                 player.Open(new Uri(audioPath));
 
-                // Wait for media to end or be stopped
+                // Wait for media to end or be stopped with timeout
                 var timeout = Task.Delay(TimeSpan.FromMinutes(30));
                 await Task.WhenAny(tcs.Task, timeout);
 
-                Debug.WriteLine($"[Audio] Playback completed or timed out: {Path.GetFileName(audioPath)}");
+                Debug.WriteLine($"[Audio] Playback completed or timed out: {playerId}");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[Audio] Playback error: {ex.Message}");
+            }
+            finally
+            {
+                // Clean up
+                if (player != null)
+                {
+                    lock (_lockObj)
+                    {
+                        _players.TryRemove(playerId, out _);
+                    }
+                    player.Stop();
+                    player.Close();
+                }
             }
         }
 
