@@ -6,7 +6,7 @@
              mc:Ignorable="d"
              d:DesignWidth="280" d:DesignHeight="400">
     <UserControl.Resources>
-        <Style x:Key="FilterToggleButtonStyle" TargetType="ToggleButton">
+        <Style x:Key="FilterRadioButtonStyle" TargetType="RadioButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="#cccccc"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -15,10 +15,11 @@
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="ToggleButton">
+                    <ControlTemplate TargetType="RadioButton">
                         <Border Background="{TemplateBinding Background}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                Padding="{TemplateBinding Padding}">
+                                Padding="{TemplateBinding Padding}"
+                                Cursor="Hand">
                             <TextBlock Text="{TemplateBinding Content}"
                                        Foreground="{TemplateBinding Foreground}"
                                        HorizontalAlignment="Center"
@@ -82,15 +83,18 @@
             <!-- フィルタータブ -->
             <Border DockPanel.Dock="Top" Height="40" Background="#333333" BorderBrush="#555555" BorderThickness="0,0,0,1">
                 <StackPanel Orientation="Horizontal" Margin="4,0">
-                    <ToggleButton Content="すべて" Style="{StaticResource FilterToggleButtonStyle}"
-                                  IsChecked="{Binding IsAllFilterChecked, Mode=TwoWay}"
-                                  x:Name="AllFilterButton"/>
-                    <ToggleButton Content="動画" Style="{StaticResource FilterToggleButtonStyle}"
-                                  Command="{Binding SetFilterCommand}" CommandParameter="Video"/>
-                    <ToggleButton Content="画像" Style="{StaticResource FilterToggleButtonStyle}"
-                                  Command="{Binding SetFilterCommand}" CommandParameter="Image"/>
-                    <ToggleButton Content="音声" Style="{StaticResource FilterToggleButtonStyle}"
-                                  Command="{Binding SetFilterCommand}" CommandParameter="Audio"/>
+                    <RadioButton x:Name="AllFilterButton" Content="すべて" GroupName="MediaFilter"
+                                 Style="{StaticResource FilterRadioButtonStyle}"
+                                 IsChecked="{Binding IsAllFilterChecked, Mode=TwoWay}"/>
+                    <RadioButton Content="動画" GroupName="MediaFilter"
+                                 Style="{StaticResource FilterRadioButtonStyle}"
+                                 Command="{Binding SetFilterCommand}" CommandParameter="Video"/>
+                    <RadioButton Content="画像" GroupName="MediaFilter"
+                                 Style="{StaticResource FilterRadioButtonStyle}"
+                                 Command="{Binding SetFilterCommand}" CommandParameter="Image"/>
+                    <RadioButton Content="音声" GroupName="MediaFilter"
+                                 Style="{StaticResource FilterRadioButtonStyle}"
+                                 Command="{Binding SetFilterCommand}" CommandParameter="Audio"/>
                 </StackPanel>
             </Border>
 

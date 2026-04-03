@@ -76,11 +76,26 @@
                 <StackPanel Orientation="Horizontal" Margin="10,0">
                     <!-- Resolution selector -->
                     <TextBlock Text="解像度:" Foreground="#a1a1aa" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                    <ComboBox x:Name="ResolutionCombo" Width="80" Height="22" Margin="0,0,10,0"
+                    <ComboBox x:Name="ResolutionCombo" Width="100" Height="22" Margin="0,0,10,0"
                               SelectionChanged="ResolutionCombo_SelectionChanged">
-                        <ComboBoxItem Content="フル" Tag="1.0" IsSelected="True"/>
-                        <ComboBoxItem Content="1/2" Tag="0.5"/>
-                        <ComboBoxItem Content="1/4" Tag="0.25"/>
+                        <ComboBoxItem>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="等倍" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="100%" Foreground="#a1a1aa" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem IsSelected="True">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="半分の大きさ" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="50%" Foreground="#a1a1aa" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text=" quarter" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="25%" Foreground="#a1a1aa" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
                     </ComboBox>
 
                     <!-- Grid toggle -->
@@ -108,11 +123,26 @@
 
                     <!-- Fit toggle -->
                     <TextBlock Text="表示:" Foreground="#a1a1aa" VerticalAlignment="Center" Margin="5,0,3,0"/>
-                    <ComboBox x:Name="FitModeCombo" Width="80" Height="22"
+                    <ComboBox x:Name="FitModeCombo" Width="110" Height="22"
                               SelectionChanged="FitModeCombo_SelectionChanged">
-                        <ComboBoxItem Content="全体表示" IsSelected="True"/>
-                        <ComboBoxItem Content="拡大"/>
-                        <ComboBoxItem Content="100%"/>
+                        <ComboBoxItem IsSelected="True">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⬜" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="全体表示" Foreground="White" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔍" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="拡大" Foreground="White" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="📏" Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="100%" Foreground="White" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
                     </ComboBox>
                 </StackPanel>
             </Border>
