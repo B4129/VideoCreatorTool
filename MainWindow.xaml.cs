@@ -101,9 +101,6 @@ namespace VideoCreatorWPF
             var text = SubtitleInput.Text;
             if (string.IsNullOrEmpty(text)) return;
 
-            // Find character track (use first track)
-            var firstTrack = timelineVm.Tracks[0];
-
             // Get character name from ComboBox
             string characterName = "ずんだもん";
             if (CharacterCombo.SelectedItem is ComboBoxItem selectedItem)
@@ -129,30 +126,57 @@ namespace VideoCreatorWPF
                 }
             }
 
+            // Find empty track or track without block at playhead position
+            var playheadFrame = timelineVm.CurrentFrame;
+            ViewModels.TimelineTrackViewModel? targetTrack = null;
+
+            foreach (var track in timelineVm.Tracks)
+            {
+                // Check if track has no block at playhead position
+                var hasBlockAtPosition = track.Items.Any(b =>
+                    playheadFrame >= b.StartFrame && playheadFrame < b.StartFrame + b.Duration);
+
+                if (!hasBlockAtPosition)
+                {
+                    targetTrack = track;
+                    break;
+                }
+            }
+
+            // If all tracks have blocks at playhead, create new track
+            if (targetTrack == null)
+            {
+                timelineVm.AddTrackInternal();
+                targetTrack = timelineVm.Tracks.Last();
+            }
+
             // Create text block
             var textBlock = new TimelineBlock
             {
                 CharacterId = Guid.NewGuid(),
-                StartFrame = timelineVm.CurrentFrame,
+                StartFrame = playheadFrame,
                 Duration = blockDuration,
                 Text = text,
                 BackgroundColor = "#4a6fa5",
                 Type = BlockType.Dialogue,
                 FontFamily = _currentFontFamily,
                 FontSize = _currentFontSize,
-                TextColor = _currentTextColor
+                TextColor = _currentTextColor,
+                TrackId = targetTrack.Items.Count > 0 ? targetTrack.Items.Last().TrackId : Guid.NewGuid()
             };
 
-            // Add text block to timeline
-            firstTrack.Items.Add(textBlock);
+            // Add text block to target track
+            targetTrack.Items.Add(textBlock);
 
-            // If audio was generated, create audio block on second track with SAME duration
-            if (audioPath != null && timelineVm.Tracks.Count > 1)
+            // If audio was generated, create audio block on next track with SAME duration
+            var textTrackIndex = timelineVm.Tracks.IndexOf(targetTrack);
+            if (audioPath != null && timelineVm.Tracks.Count > textTrackIndex + 1)
             {
+                var audioTrack = timelineVm.Tracks[textTrackIndex + 1];
                 var audioBlock = new TimelineBlock
                 {
                     CharacterId = textBlock.CharacterId,
-                    StartFrame = timelineVm.CurrentFrame,
+                    StartFrame = playheadFrame,
                     Duration = blockDuration, // Same duration as text block
                     Text = text,
                     AudioPath = audioPath,
@@ -160,9 +184,31 @@ namespace VideoCreatorWPF
                     Type = BlockType.Dialogue,
                     FontFamily = _currentFontFamily,
                     FontSize = _currentFontSize,
-                    TextColor = _currentTextColor
+                    TextColor = _currentTextColor,
+                    TrackId = audioTrack.Items.Count > 0 ? audioTrack.Items.Last().TrackId : Guid.NewGuid()
                 };
-                timelineVm.Tracks[1].Items.Add(audioBlock);
+                audioTrack.Items.Add(audioBlock);
+            }
+            else if (audioPath != null)
+            {
+                // Create new track for audio
+                timelineVm.AddTrackInternal();
+                var audioTrack = timelineVm.Tracks.Last();
+                var audioBlock = new TimelineBlock
+                {
+                    CharacterId = textBlock.CharacterId,
+                    StartFrame = playheadFrame,
+                    Duration = blockDuration,
+                    Text = text,
+                    AudioPath = audioPath,
+                    BackgroundColor = "#3b82f6",
+                    Type = BlockType.Dialogue,
+                    FontFamily = _currentFontFamily,
+                    FontSize = _currentFontSize,
+                    TextColor = _currentTextColor,
+                    TrackId = audioTrack.Items.Count > 0 ? audioTrack.Items.Last().TrackId : Guid.NewGuid()
+                };
+                audioTrack.Items.Add(audioBlock);
             }
 
             ViewModel.StatusMessage = $"字幕追加: {textBlock.Text}";

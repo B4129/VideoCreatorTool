@@ -48,3 +48,4 @@ C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\bin\Debug\net
 C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\bin\Debug\net9.0-windows\VideoCreator.pdb
 C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\obj\Debug\net9.0-windows\VideoCreator.genruntimeconfig.cache
 C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\obj\Debug\net9.0-windows\ref\VideoCreator.dll
+C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\obj\Debug\net9.0-windows\VideoCreator.sourcelink.json
