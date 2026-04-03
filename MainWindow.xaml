@@ -50,6 +50,7 @@
                         <MenuItem Header="プロジェクト設定(_P)" Command="{Binding OpenProjectSettingsCommand}"/>
                         <Separator/>
                         <MenuItem Header="インラインアイコン辞書(_I)" Click="IconDictionary_Click"/>
+                        <MenuItem Header="キャラクター設定(_C)" Click="CharacterSettings_Click"/>
                         <MenuItem Header="ショートカット設定(_K)" Click="Shortcuts_Click"/>
                         <MenuItem Header="設定(_G)" Command="{Binding OpenSettingsCommand}"/>
                     </MenuItem>

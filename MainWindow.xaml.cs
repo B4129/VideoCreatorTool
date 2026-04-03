@@ -307,6 +307,13 @@ namespace VideoCreatorWPF
             dialog.ShowDialog();
         }
 
+        private void CharacterSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new Views.CharacterSettingsDialog();
+            dialog.Owner = this;
+            dialog.ShowDialog();
+        }
+
         /// <summary>
         /// SRT字幕ファイルのインポート
         /// </summary>
