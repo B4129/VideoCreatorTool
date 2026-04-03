@@ -44,7 +44,7 @@
                     </Canvas>
 
                     <!-- Safe area guides -->
-                    <Canvas x:Name="SafeAreaCanvas" Visibility="Collapsed" SizeChanged="SafeAreaCanvas_SizeChanged">
+                    <Canvas x:Name="SafeAreaCanvas" Visibility="Collapsed">
                         <!-- 90% safe area (5% margin on each side) -->
                         <Rectangle x:Name="SafeArea90" Stroke="#00FF00" StrokeThickness="1"
                                    StrokeDashArray="4 2"/>
