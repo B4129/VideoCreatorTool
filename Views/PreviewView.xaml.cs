@@ -316,6 +316,7 @@ namespace VideoCreatorWPF.Views
                             {
                                 var videoDuration = (int)(durationSeconds.Value * 30); // 30fps
                                 System.Diagnostics.Debug.WriteLine($"Video duration from Shell API: {durationSeconds}s = {videoDuration} frames (at 30fps)");
+                                System.Diagnostics.Debug.WriteLine($"Adding video block at frame: {timelineVm.CurrentFrame}");
 
                                 var videoBlock = new Models.TimelineBlock
                                 {
@@ -333,9 +334,11 @@ namespace VideoCreatorWPF.Views
 
                                 track.Items.Add(videoBlock);
 
-                                // Update timeline total frames
-                                timelineVm.SetTotalFrames(videoDuration);
-                                mainWindow.TimelineViewControl.UpdateRuler(videoDuration);
+                                // 総フレーム数を更新（現在のブロックの終了位置を考慮）
+                                var endFrame = videoBlock.StartFrame + videoBlock.Duration;
+                                var newTotalFrames = Math.Max(timelineVm.TotalFrames, endFrame + 5 * 30);
+                                timelineVm.SetTotalFrames(newTotalFrames);
+                                mainWindow.TimelineViewControl.UpdateRuler(newTotalFrames);
 
                                 // Update status message
                                 if (mainWindow.ViewModel != null)
@@ -354,9 +357,23 @@ namespace VideoCreatorWPF.Views
                                 _pendingTimelineVmForBlock = timelineVm;
                                 _pendingMainWindowForBlock = mainWindow;
                             }
-
-                            // Set main video player source
-                            VideoPlayer.Source = new Uri(filePath);
+                        }
+                        else
+                        {
+                            System.Diagnostics.Debug.WriteLine("TimelineViewControl DataContext is null");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error adding to timeline: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("MainWindow not found");
+                }
+            }
+        }
 
                             // Set main video player source
                             VideoPlayer.Source = new Uri(filePath);

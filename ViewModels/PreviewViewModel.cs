@@ -52,7 +52,7 @@ namespace VideoCreatorWPF.ViewModels
         }
 
         /// <summary>
-        /// プレイヘッド位置にある全てのテキストブロック
+        /// プレイヘッド位置にある全てのテキストブロック（音声・動画ブロックは除外）
         /// </summary>
         public IEnumerable<TimelineBlock> CurrentTextBlocks
         {
@@ -62,8 +62,8 @@ namespace VideoCreatorWPF.ViewModels
                 {
                     foreach (var block in track.Items)
                     {
-                        // 動画ブロックはスキップ（CurrentVideoPathで処理）
-                        if (block.Type == BlockType.Video) continue;
+                        // 動画・音声ブロックはスキップ
+                        if (block.Type == BlockType.Video || block.Type == BlockType.Audio) continue;
 
                         // プレイヘッド位置にテキストがあるかチェック
                         if (_currentFrame >= block.StartFrame && _currentFrame < block.StartFrame + block.Duration)

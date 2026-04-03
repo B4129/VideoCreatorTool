@@ -21,7 +21,6 @@ namespace VideoCreatorWPF.Views
         private ResizeEdge _resizeEdge;
         private int _resizeStartDuration;
         private bool _isDraggingPlayhead;
-        private const int FramesPerPixel = 10;
         private ViewModels.TimelineTrackViewModel? _dragSourceTrack;
         private ViewModels.TimelineTrackViewModel? _dragTargetTrack;
 
@@ -80,7 +79,9 @@ namespace VideoCreatorWPF.Views
                 var currentX = (int)mousePos.X;
                 var currentY = (int)mousePos.Y;
                 var deltaX = currentX - _dragStartX;
-                var framesDelta = deltaX / FramesPerPixel;
+
+                if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
+                var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
 
                 var newFrame = Math.Max(0, _dragStartFrame + framesDelta);
 
@@ -107,7 +108,9 @@ namespace VideoCreatorWPF.Views
             {
                 var currentX = (int)e.GetPosition(this).X;
                 var deltaX = currentX - _dragStartX;
-                var framesDelta = deltaX / FramesPerPixel;
+
+                if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
+                var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
 
                 if (_resizeEdge == ResizeEdge.Right)
                 {
@@ -235,7 +238,9 @@ namespace VideoCreatorWPF.Views
             {
                 var currentX = (int)e.GetPosition(this).X;
                 var deltaX = currentX - _dragStartX;
-                var framesDelta = deltaX / FramesPerPixel;
+
+                if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
+                var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
 
                 if (_resizeEdge == ResizeEdge.Right)
                 {
