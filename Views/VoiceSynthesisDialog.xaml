@@ -51,6 +51,56 @@
                             BorderThickness="0" Cursor="Hand" Margin="0,0,0,16"
                             Click="PreviewButton_Click"/>
 
+                    <Separator Background="#3c3c3c" Margin="0,8,0,16"/>
+
+                    <!-- Preset management -->
+                    <TextBlock Text="プリセット管理" FontSize="14" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                    <!-- Preset selection -->
+                    <StackPanel Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="PresetCombo" Grid.Column="0" Height="32" FontSize="12"
+                                      Background="#3c3c3c" Foreground="#e0e0e0"
+                                      BorderBrush="#555555"/>
+                            <Button Grid.Column="2" Content="読込" Width="60" Height="32" FontSize="11"
+                                    Background="#3b82f6" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand" Click="LoadPreset_Click"/>
+                            <Button Grid.Column="4" Content="保存" Width="60" Height="32" FontSize="11"
+                                    Background="#22c55e" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand" Click="SavePreset_Click"/>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Preset save dialog -->
+                    <StackPanel x:Name="PresetSavePanel" Margin="0,0,0,12" Visibility="Collapsed">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="PresetNameBox" Grid.Column="0" Height="32" FontSize="12"
+                                     Background="#3c3c3c" Foreground="#e0e0e0"
+                                     BorderBrush="#555555" Padding="6,4"
+                                     Text="プリセット名"/>
+                            <Button Grid.Column="2" Content="OK" Width="50" Height="32" FontSize="11"
+                                    Background="#22c55e" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand" Click="PresetConfirmSave_Click"/>
+                            <Button Grid.Column="4" Content="取消" Width="50" Height="32" FontSize="11"
+                                    Background="#666666" Foreground="White"
+                                    BorderThickness="0" Cursor="Hand" Click="PresetCancelSave_Click"/>
+                        </Grid>
+                    </StackPanel>
+
                     <Separator Background="#3c3c3c" Margin="0,0,0,16"/>
 
                     <!-- Parameters -->

@@ -12,11 +12,14 @@ namespace VideoCreatorWPF.Views
     {
         private Character? _currentCharacter;
         private List<Character> _characters = new();
+        private List<VoicePreset> _presets = new();
+        private bool _isPresetListUpdating = false;
 
         public VoiceSynthesisDialog()
         {
             InitializeComponent();
             LoadCharacters();
+            LoadPresets();
         }
 
         private void LoadCharacters()
@@ -39,6 +42,40 @@ namespace VideoCreatorWPF.Views
             {
                 SpeakerCombo.SelectedIndex = 0;
             }
+        }
+
+        private void LoadPresets()
+        {
+            _presets = PresetManager.GetAll();
+            RefreshPresetCombo();
+        }
+
+        private void RefreshPresetCombo()
+        {
+            _isPresetListUpdating = true;
+            var currentSelection = PresetCombo.SelectedItem?.ToString();
+            PresetCombo.Items.Clear();
+            foreach (var preset in _presets)
+            {
+                PresetCombo.Items.Add(new ComboBoxItem { Content = preset.Name, Tag = preset });
+            }
+            // 以前の選択を復元
+            if (!string.IsNullOrEmpty(currentSelection))
+            {
+                for (int i = 0; i < PresetCombo.Items.Count; i++)
+                {
+                    if (PresetCombo.Items[i] is ComboBoxItem item && item.Content.ToString() == currentSelection)
+                    {
+                        PresetCombo.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            else if (PresetCombo.Items.Count > 0)
+            {
+                PresetCombo.SelectedIndex = 0;
+            }
+            _isPresetListUpdating = false;
         }
 
         private void SpeakerCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -254,6 +291,111 @@ namespace VideoCreatorWPF.Views
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        // === Preset management event handlers ===
+
+        private void LoadPreset_Click(object sender, RoutedEventArgs e)
+        {
+            if (PresetCombo.SelectedItem is ComboBoxItem item && item.Tag is VoicePreset preset)
+            {
+                if (_currentCharacter == null)
+                {
+                    MessageBox.Show("キャラクターを選択してください。", "警告",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Apply preset to current character
+                _currentCharacter.Speed = preset.Speed;
+                _currentCharacter.Pitch = preset.Pitch;
+                _currentCharacter.Intonation = preset.Intonation;
+                _currentCharacter.Volume = preset.Volume;
+                _currentCharacter.StartSilenceMs = preset.StartSilenceMs;
+                _currentCharacter.EndSilenceMs = preset.EndSilenceMs;
+
+                // Update UI
+                LoadCharacterParameters();
+
+                MessageBox.Show($"プリセット「{preset.Name}」を適用しました。", "成功",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("プリセットを選択してください。", "警告",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void SavePreset_Click(object sender, RoutedEventArgs e)
+        {
+            // Show preset save panel
+            PresetSavePanel.Visibility = Visibility.Visible;
+            PresetNameBox.Text = "";
+            PresetNameBox.Focus();
+        }
+
+        private void PresetConfirmSave_Click(object sender, RoutedEventArgs e)
+        {
+            var name = PresetNameBox.Text.Trim();
+            if (string.IsNullOrEmpty(name))
+            {
+                MessageBox.Show("プリセット名を入力してください。", "警告",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Check if preset with same name exists
+            var existing = _presets.Find(p => p.Name == name);
+            if (existing != null)
+            {
+                var result = MessageBox.Show(
+                    $"プリセット「{name}」は既に存在します。上書きしますか？",
+                    "確認", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                // Update existing preset
+                existing.Speed = _currentCharacter?.Speed ?? 1.0;
+                existing.Pitch = _currentCharacter?.Pitch ?? 0.0;
+                existing.Intonation = _currentCharacter?.Intonation ?? 1.0;
+                existing.Volume = _currentCharacter?.Volume ?? 1.0;
+                existing.StartSilenceMs = _currentCharacter?.StartSilenceMs ?? 200;
+                existing.EndSilenceMs = _currentCharacter?.EndSilenceMs ?? 200;
+
+                PresetManager.Update(existing);
+            }
+            else
+            {
+                // Create new preset
+                var newPreset = new VoicePreset
+                {
+                    Name = name,
+                    Speed = _currentCharacter?.Speed ?? 1.0,
+                    Pitch = _currentCharacter?.Pitch ?? 0.0,
+                    Intonation = _currentCharacter?.Intonation ?? 1.0,
+                    Volume = _currentCharacter?.Volume ?? 1.0,
+                    StartSilenceMs = _currentCharacter?.StartSilenceMs ?? 200,
+                    EndSilenceMs = _currentCharacter?.EndSilenceMs ?? 200
+                };
+
+                PresetManager.Add(newPreset);
+                _presets.Add(newPreset);
+            }
+
+            RefreshPresetCombo();
+            PresetSavePanel.Visibility = Visibility.Collapsed;
+
+            MessageBox.Show("プリセットを保存しました。", "成功",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void PresetCancelSave_Click(object sender, RoutedEventArgs e)
+        {
+            PresetSavePanel.Visibility = Visibility.Collapsed;
         }
     }
 }

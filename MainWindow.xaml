@@ -10,6 +10,10 @@
         TextElement.FontFamily="Segoe UI"
         WindowState="Maximized">
 
+    <Window.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
