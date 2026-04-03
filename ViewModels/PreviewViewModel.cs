@@ -534,7 +534,7 @@ namespace VideoCreatorWPF.ViewModels
                 return;
             }
 
-            // TODO: 感情検出マッピング（将来的に高度なNLPを使う）
+            // Emotion detection mapping (to be implemented with advanced NLP in the future)
             // 簡易版: キーワードに基づく感情判定
             var emotionMap = new Dictionary<string, string>
             {

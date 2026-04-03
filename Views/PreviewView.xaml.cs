@@ -63,7 +63,7 @@ namespace VideoCreatorWPF.Views
                         else
                         {
                             // 同じ動画ならシークのみ
-                            var fps = 30.0;
+                            var fps = Core.TimelineConstants.FramesPerSecond;
                             var offsetFrames = vm.CurrentFrame - vm.CurrentVideoStartFrame;
                             var positionSeconds = offsetFrames / fps;
                             Debug.WriteLine($"[Preview] Seeking to {positionSeconds}s (frame {vm.CurrentFrame}, start {vm.CurrentVideoStartFrame})");
@@ -288,7 +288,7 @@ namespace VideoCreatorWPF.Views
                 if (Window.GetWindow(this) is MainWindow mainWindow &&
                     mainWindow.TimelineViewControl.DataContext is ViewModels.TimelineViewModel timelineVm)
                 {
-                    var fps = 30.0;
+                    var fps = Core.TimelineConstants.FramesPerSecond;
                     var currentFrame = (int)(positionSeconds * fps);
                     timelineVm.CurrentFrame = currentFrame;
                 }
@@ -490,7 +490,7 @@ namespace VideoCreatorWPF.Views
                 // Update video position if playing
                 if (VideoPlayer.Source != null && VideoPlayer.NaturalDuration.HasTimeSpan)
                 {
-                    var fps = 30.0;
+                    var fps = Core.TimelineConstants.FramesPerSecond;
                     var positionSeconds = newFrame / fps;
                     VideoPlayer.Position = TimeSpan.FromSeconds(positionSeconds);
                 }

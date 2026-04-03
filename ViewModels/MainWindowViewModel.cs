@@ -298,9 +298,7 @@ namespace VideoCreatorWPF.ViewModels
 
         private string GetRandomColor()
         {
-            var colors = new[] { "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899" };
-            var random = new Random();
-            return colors[random.Next(colors.Length)];
+            return Utilities.ColorHelper.GetRandomColor();
         }
 
         private int _selectionStartFrame = -1;

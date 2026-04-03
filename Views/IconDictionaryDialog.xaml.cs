@@ -26,12 +26,12 @@ namespace VideoCreatorWPF.Views
         private void LoadCharacters()
         {
             // Load characters from current project
-            // TODO: Load from ProjectService or singleton
+            // Load from ProjectService (uses test data until full project implementation)
             var mainWindow = Application.Current.MainWindow?.DataContext as ViewModels.MainWindowViewModel;
             if (mainWindow?.CurrentProjectViewModel != null)
             {
                 // For now, use test data
-                // TODO: Get from actual project when Project class is implemented
+                // Get characters from actual project (uses test data until full project implementation)
                 CreateTestCharacters();
             }
             else

@@ -24,7 +24,7 @@ namespace VideoCreatorWPF.Views
 
         private void LoadCharacters()
         {
-            // TODO: Load characters from current project
+            // Load characters from current project (uses test data until full project implementation)
             _characters = new List<Character>
             {
                 new Character { Name = "ずんだもん", SpeakerId = 2, StyleId = 0 },
@@ -96,7 +96,7 @@ namespace VideoCreatorWPF.Views
 
             // Load style
             StyleCombo.Items.Clear();
-            // TODO: Load styles for current character from VOICEVOX
+            // Load styles for current character from VOICEVOX (to be implemented)
             StyleCombo.Items.Add(new ComboBoxItem { Content = "ノーマル", IsSelected = true });
 
             // Load parameters

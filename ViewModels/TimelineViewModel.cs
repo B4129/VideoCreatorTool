@@ -22,8 +22,6 @@ namespace VideoCreatorWPF.ViewModels
         private bool _isSnapEnabled = true;
         private double _pixelsPerFrame = 0.5;
         private readonly ObservableCollection<TimelineBlock> _selectedBlocks = new();
-        private const double MinPixelsPerFrame = 0.1;
-        private const double MaxPixelsPerFrame = 5.0;
 
         public event Action<object, TimelineBlock>? BlockSelected;
 
@@ -79,22 +77,19 @@ namespace VideoCreatorWPF.ViewModels
             {
                 foreach (var block in track.Items)
                 {
-                    // 音声ブロックで、現在のフレームがブロック内かチェック
                     if (block.Type == BlockType.Audio &&
                         CurrentFrame >= block.StartFrame &&
                         CurrentFrame < block.StartFrame + block.Duration &&
                         !string.IsNullOrEmpty(block.AudioPath) &&
                         !_playingAudioBlocks.Contains(block.Id))
                     {
-                        // 現在のフレーム位置から再生（30fps換算）
-                        var offsetSeconds = (CurrentFrame - block.StartFrame) / 30.0;
+                        var offsetSeconds = (CurrentFrame - block.StartFrame) / Core.TimelineConstants.FramesPerSecond;
                         _playingAudioBlocks.Add(block.Id);
-                        _ = Services.AudioService.PlayAudioAsync(block.AudioPath, offsetSeconds, block.PlaybackSpeed);
+                        _ = PlayAudioBlockAsync(block);
 
                         System.Diagnostics.Debug.WriteLine($"[Audio] Starting audio block at frame {CurrentFrame}: {block.AudioPath} (offset: {offsetSeconds:F2}s)");
                     }
 
-                    // 動画ブロックで、現在のフレームがブロック内かチェック
                     if (block.Type == BlockType.Video &&
                         CurrentFrame >= block.StartFrame &&
                         CurrentFrame < block.StartFrame + block.Duration &&
@@ -104,7 +99,6 @@ namespace VideoCreatorWPF.ViewModels
                         _playingAudioBlocks.Add(block.Id);
                         System.Diagnostics.Debug.WriteLine($"[Video] Starting video block at frame {CurrentFrame}: {block.AudioPath} (block start: {block.StartFrame})");
 
-                        // MainWindow経由でプレビューの動画プレイヤーに通知
                         VideoBlockStarted?.Invoke(this, new VideoBlockEventArgs
                         {
                             VideoPath = block.AudioPath,
@@ -140,8 +134,8 @@ namespace VideoCreatorWPF.ViewModels
             get => _selectedBlocks;
         }
 
-        public double MinPixelsPerFrameConst => MinPixelsPerFrame;
-        public double MaxPixelsPerFrameConst => MaxPixelsPerFrame;
+        public double MinPixelsPerFrameConst => Core.TimelineConstants.MinPixelsPerFrame;
+        public double MaxPixelsPerFrameConst => Core.TimelineConstants.MaxPixelsPerFrame;
 
         public ICommand PlayCommand { get; }
         public ICommand PauseCommand { get; }
@@ -224,7 +218,7 @@ namespace VideoCreatorWPF.ViewModels
             if (_gridLines == null) return;
 
             var totalWidth = TotalFrames * PixelsPerFrame;
-            var pixelStep = 50.0; // 50ピクセル毎にグリッド線
+            var pixelStep = Core.TimelineConstants.GridLinePixelInterval;
             var frameStep = pixelStep / PixelsPerFrame;
 
             var currentX = 0.0;
@@ -235,7 +229,7 @@ namespace VideoCreatorWPF.ViewModels
                 _gridLines.Add(new GridLineItem
                 {
                     X = currentX,
-                    Color = currentFrame % 30 == 0 ? "#555555" : "#444444"
+                    Color = currentFrame % Core.TimelineConstants.FramesPerSecond == 0 ? "#555555" : "#444444"
                 });
                 currentX += pixelStep;
                 currentFrame += (int)frameStep;
@@ -270,8 +264,8 @@ namespace VideoCreatorWPF.ViewModels
                     }
                 }
 
-                // Add 5 seconds (150 frames at 30fps)
-                return lastEndFrame + (5 * 30);
+                // Add 5 seconds buffer
+                return lastEndFrame + (int)(5 * Core.TimelineConstants.FramesPerSecond);
             }
         }
 
@@ -292,7 +286,7 @@ namespace VideoCreatorWPF.ViewModels
         {
             get
             {
-                var seconds = _currentFrame / 30.0;
+                var seconds = _currentFrame / Core.TimelineConstants.FramesPerSecond;
                 var minutes = (int)(seconds / 60);
                 var secs = (int)(seconds % 60);
                 return $"{minutes:D2}:{secs:D2}";
@@ -304,7 +298,7 @@ namespace VideoCreatorWPF.ViewModels
             get
             {
                 var totalFrames = TotalFrames;
-                var seconds = totalFrames / 30.0;
+                var seconds = totalFrames / Core.TimelineConstants.FramesPerSecond;
                 var minutes = (int)(seconds / 60);
                 var secs = (int)(seconds % 60);
                 return $"{minutes:D2}:{secs:D2}";
@@ -314,12 +308,12 @@ namespace VideoCreatorWPF.ViewModels
         // Zoom methods
         public void ZoomIn()
         {
-            PixelsPerFrame = Math.Min(MaxPixelsPerFrame, PixelsPerFrame * 1.2);
+            PixelsPerFrame = Math.Min(Core.TimelineConstants.MaxPixelsPerFrame, PixelsPerFrame * 1.2);
         }
 
         public void ZoomOut()
         {
-            PixelsPerFrame = Math.Max(MinPixelsPerFrame, PixelsPerFrame / 1.2);
+            PixelsPerFrame = Math.Max(Core.TimelineConstants.MinPixelsPerFrame, PixelsPerFrame / 1.2);
         }
 
         // Track removal
@@ -485,12 +479,10 @@ namespace VideoCreatorWPF.ViewModels
         {
             if (IsPlaying)
             {
-                // 再生中なら一時停止
                 Pause();
             }
             else
             {
-                // 停止中なら再生
                 StartPlayback();
             }
         }
@@ -504,14 +496,14 @@ namespace VideoCreatorWPF.ViewModels
             }
 
             IsPlaying = true;
-            _playingAudioBlocks.Clear(); // 再生開始時にクリア
+            _playingAudioBlocks.Clear();
 
             // 再生開始時に、現在のフレーム位置にある音声/動画ブロックを探して再生
             StartAudioBlocksAtCurrentFrame();
 
-            // 再生開始時にプレイヘッド位置変更イベントを発火（スクロール用）
             PlayheadPositionChanged?.Invoke(this, CurrentFrame);
 
+            // タイマー間隔を33ms（30fps）に修正
             _playTimer = new System.Threading.Timer(_ =>
             {
                 var app = System.Windows.Application.Current;
@@ -521,9 +513,7 @@ namespace VideoCreatorWPF.ViewModels
                 {
                     if (CurrentFrame < TotalFrames)
                     {
-                        // 現在のフレーム位置的な音声ブロックをチェック
                         CheckAndPlayAudioBlocksAtCurrentFrame();
-
                         CurrentFrame++;
                     }
                     else
@@ -531,14 +521,16 @@ namespace VideoCreatorWPF.ViewModels
                         Stop();
                     }
                 });
-            }, null, 0, 30); // 30ms = 33.3fps (slightly faster for smooth playback)
+            }, null, 0, Core.TimelineConstants.PlaybackTimerIntervalMs); // 33ms = 30fps
         }
 
         /// <summary>
-        /// 現在のフレーム位置にある音声/動画ブロックを再生
+        /// 現在のフレーム位置にある音声/動画ブロックを再生（再生中は開始位置のみチェック）
         /// </summary>
         private void CheckAndPlayAudioBlocksAtCurrentFrame()
         {
+            System.Diagnostics.Debug.WriteLine($"[Audio] CheckAndPlayAudioBlocksAtCurrentFrame: CurrentFrame={CurrentFrame}");
+
             // Ensure at least one track exists when playing
             if (_tracks.Count == 0)
             {
@@ -550,37 +542,35 @@ namespace VideoCreatorWPF.ViewModels
             {
                 foreach (var block in track.Items)
                 {
-                    // 音声ブロックで、現在のフレームが開始位置かチェック
+                    // 音声ブロックの開始位置チェック（厳密一致）
+                    // 既に再生中でない場合のみ
                     if (block.Type == BlockType.Audio &&
                         block.StartFrame == CurrentFrame &&
                         !string.IsNullOrEmpty(block.AudioPath) &&
                         !_playingAudioBlocks.Contains(block.Id))
                     {
-                        // 音声ファイルを最初から再生
                         _playingAudioBlocks.Add(block.Id);
+                        System.Diagnostics.Debug.WriteLine($"[Audio] STARTING audio block: Id={block.Id}, StartFrame={block.StartFrame}, Path={block.AudioPath}");
                         _ = PlayAudioBlockAsync(block);
-
-                        System.Diagnostics.Debug.WriteLine($"[Audio] Playing audio block at frame {CurrentFrame}: {block.AudioPath}");
                     }
 
-                    // 音声ブロックの再生終了をクリーニング
+                    // 音声ブロックの再生終了クリーニング
                     if (block.Type == BlockType.Audio &&
                         _playingAudioBlocks.Contains(block.Id) &&
                         CurrentFrame >= block.StartFrame + block.Duration)
                     {
                         _playingAudioBlocks.Remove(block.Id);
+                        System.Diagnostics.Debug.WriteLine($"[Audio] Finished audio block at frame {CurrentFrame}: {block.AudioPath}");
                     }
 
                     // 動画ブロックの開始/終了検出
                     if (block.Type == BlockType.Video && !string.IsNullOrEmpty(block.AudioPath))
                     {
-                        // 動画ブロックの開始位置に来たら通知
                         if (block.StartFrame == CurrentFrame && !_playingAudioBlocks.Contains(block.Id))
                         {
                             _playingAudioBlocks.Add(block.Id);
                             System.Diagnostics.Debug.WriteLine($"[Video] Video block started at frame {CurrentFrame}: {block.AudioPath}");
 
-                            // MainWindow経由でプレビューの動画プレイヤーに通知
                             VideoBlockStarted?.Invoke(this, new VideoBlockEventArgs
                             {
                                 VideoPath = block.AudioPath,
@@ -589,7 +579,6 @@ namespace VideoCreatorWPF.ViewModels
                             });
                         }
 
-                        // 動画ブロックの再生終了をクリーニング
                         if (_playingAudioBlocks.Contains(block.Id) && CurrentFrame >= block.StartFrame + block.Duration)
                         {
                             _playingAudioBlocks.Remove(block.Id);
@@ -644,15 +633,17 @@ namespace VideoCreatorWPF.ViewModels
         /// </summary>
         private async Task PlayAudioBlockAsync(Models.TimelineBlock block)
         {
+            System.Diagnostics.Debug.WriteLine($"[Audio] PlayAudioBlockAsync START: Id={block.Id}, Path={block.AudioPath}");
             try
             {
                 await Services.AudioService.PlayAudioAsync(block.AudioPath, 0, block.PlaybackSpeed);
+                System.Diagnostics.Debug.WriteLine($"[Audio] PlayAudioBlockAsync COMPLETED: Id={block.Id}");
             }
             finally
             {
                 // 再生終了後にリストから削除
                 _playingAudioBlocks.Remove(block.Id);
-                Debug.WriteLine($"[Audio] Audio block finished at frame {CurrentFrame}: {block.AudioPath}");
+                System.Diagnostics.Debug.WriteLine($"[Audio] Audio block REMOVED from playing list: Id={block.Id}");
             }
         }
 
@@ -670,9 +661,7 @@ namespace VideoCreatorWPF.ViewModels
 
         private string GetRandomColor()
         {
-            var colors = new[] { "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899" };
-            var random = new Random();
-            return colors[random.Next(colors.Length)];
+            return Utilities.ColorHelper.GetRandomColor();
         }
 
         public void Undo()
@@ -756,167 +745,6 @@ namespace VideoCreatorWPF.ViewModels
             _redoStack.Clear();
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));
-        }
-    }
-
-    public class BlockMoveData
-    {
-        public TimelineBlock Block { get; set; } = null!;
-        public int OldStartFrame { get; set; }
-        public int NewStartFrame { get; set; }
-        public int OldDuration { get; set; }
-        public int NewDuration { get; set; }
-    }
-
-    public class DeleteBlockData
-    {
-        public TimelineTrackViewModel Track { get; set; } = null!;
-        public TimelineBlock Block { get; set; } = null!;
-        public int Index { get; set; }
-    }
-
-    public class TimelineAction
-    {
-        public string Action { get; set; } = string.Empty;
-        public object? Data { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.Now;
-    }
-
-    public class GridLineItem : ViewModelBase
-    {
-        private double _x;
-        private string _color;
-
-        public double X
-        {
-            get => _x;
-            set => SetProperty(ref _x, value);
-        }
-
-        public string Color
-        {
-            get => _color;
-            set => SetProperty(ref _color, value);
-        }
-    }
-
-    /// <summary>
-    /// 動画ブロック開始イベント
-    /// </summary>
-    public class VideoBlockEventArgs : EventArgs
-    {
-        public string VideoPath { get; set; } = string.Empty;
-        public int StartFrame { get; set; }
-        public int Duration { get; set; }
-    }
-
-    public class TimelineTrackViewModel : ViewModelBase
-    {
-        private readonly TimelineTrack _track;
-        private string _name;
-        private bool _isVisible;
-        private bool _isLocked;
-        private bool _isEnabled = true;
-        private double _volume = 100;
-        private bool _isMuted;
-        private bool _isEditingName;
-        private string _editingName = string.Empty;
-
-        public TimelineTrackViewModel(TimelineTrack track)
-        {
-            _track = track;
-            _name = track.Name;
-            _isVisible = track.IsVisible;
-            _isLocked = track.IsLocked;
-            _isEnabled = track.IsEnabled;
-        }
-
-        public string Name
-        {
-            get => _name;
-            set => SetProperty(ref _name, value);
-        }
-
-        public bool IsEditingName
-        {
-            get => _isEditingName;
-            set => SetProperty(ref _isEditingName, value);
-        }
-
-        public string EditingName
-        {
-            get => _editingName;
-            set => SetProperty(ref _editingName, value);
-        }
-
-        public void StartRename()
-        {
-            _editingName = _name;
-            IsEditingName = true;
-        }
-
-        public void EndRename()
-        {
-            if (!string.IsNullOrWhiteSpace(_editingName))
-            {
-                Name = _editingName;
-            }
-            IsEditingName = false;
-        }
-
-        public string? BlockColor => _track.BlockColor;
-
-        public bool IsVisible
-        {
-            get => _isVisible;
-            set
-            {
-                if (SetProperty(ref _isVisible, value))
-                {
-                    _track.IsVisible = value;
-                }
-            }
-        }
-
-        public bool IsLocked
-        {
-            get => _isLocked;
-            set
-            {
-                if (SetProperty(ref _isLocked, value))
-                {
-                    _track.IsLocked = value;
-                }
-            }
-        }
-
-        public bool IsEnabled
-        {
-            get => _isEnabled;
-            set
-            {
-                if (SetProperty(ref _isEnabled, value))
-                {
-                    // When disabled, lock the track
-                    _track.IsEnabled = value;
-                    _isLocked = !value;
-                    OnPropertyChanged(nameof(IsLocked));
-                }
-            }
-        }
-
-        public ObservableCollection<TimelineBlock> Items => _track.Items;
-
-        public double Volume
-        {
-            get => _volume;
-            set => SetProperty(ref _volume, value);
-        }
-
-        public bool IsMuted
-        {
-            get => _isMuted;
-            set => SetProperty(ref _isMuted, value);
         }
     }
 }

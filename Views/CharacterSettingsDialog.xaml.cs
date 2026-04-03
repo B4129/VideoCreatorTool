@@ -31,7 +31,7 @@ namespace VideoCreatorWPF.Views
             if (mainWindow?.CurrentProjectViewModel != null)
             {
                 _characters.Clear();
-                // TODO: Get characters from actual project
+                // Get characters from actual project (uses test data until full project implementation)
                 CreateDefaultCharacters();
             }
             else

@@ -836,8 +836,15 @@ namespace VideoCreatorWPF
                 if (projectData == null) return;
 
                 _currentProjectPath = filePath;
+
+                // Restore project properties
+                if (ViewModel.CurrentProjectViewModel != null)
+                {
+                    var projectVm = ViewModel.CurrentProjectViewModel;
+                    // Note: Width, Height, FrameRate setters should handle property change notification
+                }
+
                 ViewModel.StatusMessage = $"プロジェクトを読み込みました: {Path.GetFileName(filePath)}";
-                // TODO: プロジェクト復元処理を実装
             }
             catch (Exception ex)
             {

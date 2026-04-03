@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -7,131 +6,94 @@ using System.Windows.Media;
 
 namespace VideoCreatorWPF.Services
 {
+    /// <summary>
+    /// Simplified audio service - plays one sound at a time
+    /// </summary>
     public class AudioService
     {
-        private static ConcurrentDictionary<string, MediaPlayer> _players = new();
-        private static object _lockObj = new object();
+        private static MediaPlayer? _currentPlayer;
+        private static TaskCompletionSource<bool>? _currentPlaybackTcs;
 
+        /// <summary>
+        /// Play audio file asynchronously
+        /// </summary>
         public static async Task PlayAudioAsync(string audioPath, double startPositionSeconds = 0, double playbackSpeed = 1.0)
         {
-            string playerId = $"{audioPath}_{Guid.NewGuid()}";
-            MediaPlayer? player = null;
-
             try
             {
-                Debug.WriteLine($"[Audio] PlayAudioAsync called: {audioPath} (speed: {playbackSpeed}, id: {playerId})");
+                Debug.WriteLine($"[Audio] PlayAudioAsync: {audioPath}");
 
                 if (!File.Exists(audioPath))
                 {
-                    Debug.WriteLine($"[Audio] Audio file not found: {audioPath}");
+                    Debug.WriteLine($"[Audio] File not found: {audioPath}");
                     return;
                 }
 
-                player = new MediaPlayer();
+                // Stop previous playback
+                StopAll();
 
-                // Use lock to prevent race conditions
-                lock (_lockObj)
-                {
-                    _players[playerId] = player;
-                }
-
-                // Set completed event handler
-                var tcs = new TaskCompletionSource<bool>();
-
-                // Subscribe to MediaEnded
-                player.MediaEnded += (s, e) =>
-                {
-                    Debug.WriteLine($"[Audio] MediaEnded: {playerId}");
-                    tcs.TrySetResult(true);
-                };
-
-                // Open media asynchronously
-                player.MediaOpened += (s, e) =>
-                {
-                    Debug.WriteLine($"[Audio] MediaOpened, duration: {player.NaturalDuration.TimeSpan}");
-
-                    // Seek to start position if specified
-                    if (startPositionSeconds > 0)
-                    {
-                        var position = TimeSpan.FromSeconds(startPositionSeconds);
-                        var duration = player.NaturalDuration.TimeSpan;
-                        if (position < duration)
-                        {
-                            player.Position = position;
-                            Debug.WriteLine($"[Audio] Seeking to {startPositionSeconds}s in {audioPath}");
-                        }
-                    }
-
-                    // Set playback speed BEFORE playing
-                    player.SpeedRatio = playbackSpeed;
-                    Debug.WriteLine($"[Audio] Set playback speed to {playbackSpeed}");
-
-                    // Play the audio
-                    player.Play();
-                    Debug.WriteLine($"[Audio] Play() called for: {Path.GetFileName(audioPath)} at {playbackSpeed}x speed");
-
-                    // Verify speed was set
-                    Debug.WriteLine($"[Audio] Actual SpeedRatio: {player.SpeedRatio}");
-                };
-
+                var player = new MediaPlayer();
                 player.Open(new Uri(audioPath));
 
-                // Wait for media to end or be stopped with timeout
-                var timeout = Task.Delay(TimeSpan.FromMinutes(30));
-                await Task.WhenAny(tcs.Task, timeout);
+                // Wait for MediaOpened
+                var tcsOpen = new TaskCompletionSource<bool>();
+                player.MediaOpened += (s, e) => tcsOpen.TrySetResult(true);
 
-                Debug.WriteLine($"[Audio] Playback completed or timed out: {playerId}");
+                await Task.WhenAny(tcsOpen.Task, Task.Delay(3000));
+
+                if (!tcsOpen.Task.IsCompleted)
+                {
+                    Debug.WriteLine("[Audio] MediaOpened timeout");
+                    player.Close();
+                    return;
+                }
+
+                // Set initial position
+                if (startPositionSeconds > 0)
+                {
+                    var pos = TimeSpan.FromSeconds(startPositionSeconds);
+                    if (pos < player.NaturalDuration.TimeSpan)
+                    {
+                        player.Position = pos;
+                    }
+                }
+
+                // Set playback speed
+                player.SpeedRatio = playbackSpeed;
+
+                // Start playback
+                _currentPlayer = player;
+                _currentPlaybackTcs = new TaskCompletionSource<bool>();
+                player.MediaEnded += (s, e) => _currentPlaybackTcs?.TrySetResult(true);
+
+                player.Play();
+                Debug.WriteLine($"[Audio] Playing: {Path.GetFileName(audioPath)}");
+
+                // Wait for completion
+                await _currentPlaybackTcs.Task;
+                Debug.WriteLine("[Audio] Playback ended");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[Audio] Playback error: {ex.Message}");
+                Debug.WriteLine($"[Audio] Error: {ex.Message}");
             }
             finally
             {
-                // Clean up
-                if (player != null)
-                {
-                    lock (_lockObj)
-                    {
-                        _players.TryRemove(playerId, out _);
-                    }
-                    player.Stop();
-                    player.Close();
-                }
+                _currentPlayer?.Stop();
+                _currentPlayer?.Close();
+                _currentPlayer = null;
+                _currentPlaybackTcs = null;
             }
         }
 
-        public static void StopAudio(string audioPath)
-        {
-            try
-            {
-                if (_players.TryRemove(audioPath, out var player))
-                {
-                    player.Stop();
-                    player.Close();
-                    Debug.WriteLine($"[Audio] Stopped: {audioPath}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[Audio] Stop error: {ex.Message}");
-            }
-        }
-
+        /// <summary>
+        /// Stop all playback immediately
+        /// </summary>
         public static void StopAll()
         {
-            foreach (var kvp in _players)
-            {
-                try
-                {
-                    kvp.Value.Stop();
-                    kvp.Value.Close();
-                }
-                catch { }
-            }
-            _players.Clear();
+            Debug.WriteLine("[Audio] StopAll");
+            _currentPlayer?.Stop();
+            _currentPlaybackTcs?.TrySetResult(true);
         }
-
-        public static bool IsPlaying { get; private set; }
     }
 }

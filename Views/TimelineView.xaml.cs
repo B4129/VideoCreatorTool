@@ -507,14 +507,15 @@ namespace VideoCreatorWPF.Views
         }
 
         // Visual feedback for drag-drop
+        // NOTE: Visual feedback requires TracksPanel to be available in XAML
         private void UpdateDragDropFeedback(int currentY)
         {
-            // TODO: Implement visual feedback when TracksPanel is available
+            // Currently placeholder - implement when track highlighting UI is added
         }
 
         private void ClearDragDropFeedback()
         {
-            // TODO: Implement visual feedback cleanup
+            // Currently placeholder - implement when track highlighting UI is added
         }
 
         private void DeleteSelectedBlocks(List<TimelineBlock> blocks, ViewModels.TimelineViewModel timelineVm)
@@ -605,14 +606,30 @@ namespace VideoCreatorWPF.Views
                     var originalDurationSeconds = originalDuration / 30.0;
                     var stretchFactor = newDurationSeconds / originalDurationSeconds;
 
-                    // 伸長率が1でない場合、音声を再配置
+                    // 伸長率が1でない場合、音声を伸長
                     if (Math.Abs(stretchFactor - 1.0) > 0.01)
                     {
                         System.Diagnostics.Debug.WriteLine($"[AudioStretch] Resizing audio: {block.AudioPath}, factor: {stretchFactor:F2}x");
-                        // TODO: Implement actual audio stretching using ffmpeg
-                        // For now, just update the block duration
-                        // In production, you would use ffmpeg to create stretched audio:
-                        // ffmpeg -i input.wav -filter:a "atempo=<stretchFactor>" output.wav
+
+                        // ffmpegを使用して音声ファイルを伸長
+                        try
+                        {
+                            var stretchedPath = await Services.AudioStretchService.StretchAsync(
+                                block.AudioPath,
+                                originalDuration,
+                                block.Duration
+                            );
+
+                            // 伸長後の音声ファイルパスを更新
+                            block.AudioPath = stretchedPath;
+
+                            System.Diagnostics.Debug.WriteLine($"[AudioStretch] Audio stretched successfully: {stretchedPath}");
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AudioStretch] Failed to stretch audio: {ex.Message}");
+                            // エラー時は元の音声ファイルをそのまま使用
+                        }
                     }
                 }
             }
