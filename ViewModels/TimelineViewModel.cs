@@ -138,8 +138,8 @@ namespace VideoCreatorWPF.ViewModels
         {
             get
             {
-                // If no blocks, show at least 10 seconds (30fps = 300 frames at 1/100 scale)
-                var minFrames = 30 * 10 * 100; // 10 seconds at 1/100 scale
+                // If no blocks, show at least 10 seconds (30fps = 300 frames)
+                var minFrames = 30 * 10; // 10 seconds at 30fps
 
                 if (_totalFrames.HasValue && _totalFrames.Value > minFrames)
                 {
@@ -160,8 +160,8 @@ namespace VideoCreatorWPF.ViewModels
                     }
                 }
 
-                // Add 5 seconds (150 frames at 1/100 scale)
-                return lastEndFrame + (5 * 30 * 100);
+                // Add 5 seconds (150 frames at 30fps)
+                return lastEndFrame + (5 * 30);
             }
         }
 
