@@ -152,33 +152,50 @@ namespace VideoCreatorWPF
             }
 
             // Find track where new block won't overlap with existing blocks
-            ViewModels.TimelineTrackViewModel? targetTrack = null;
+            // Note: Text blocks go on one track, audio blocks go on the next track
+            ViewModels.TimelineTrackViewModel? textTrack = null;
+            ViewModels.TimelineTrackViewModel? audioTrack = null;
 
             // Calculate the end frame of the new block we want to add
             int newBlockEndFrame = playheadFrame + blockDuration;
 
-            foreach (var track in timelineVm.Tracks)
+            // Find two consecutive tracks without overlap
+            for (int i = 0; i < timelineVm.Tracks.Count - 1; i++)
             {
-                // Check if any existing block overlaps with the new block's time range
-                var hasOverlap = track.Items.Any(b =>
+                var track1 = timelineVm.Tracks[i];
+                var track2 = timelineVm.Tracks[i + 1];
+
+                // Check if track1 has any overlap with text block
+                var track1HasOverlap = track1.Items.Any(b =>
                 {
                     int existingBlockEndFrame = b.StartFrame + b.Duration;
-                    // Overlap occurs if: newStart < existingEnd AND newEnd > existingStart
                     return playheadFrame < existingBlockEndFrame && newBlockEndFrame > b.StartFrame;
                 });
 
-                if (!hasOverlap)
+                // Check if track2 has any overlap with audio block
+                var track2HasOverlap = track2.Items.Any(b =>
                 {
-                    targetTrack = track;
+                    int existingBlockEndFrame = b.StartFrame + b.Duration;
+                    return playheadFrame < existingBlockEndFrame && newBlockEndFrame > b.StartFrame;
+                });
+
+                // If both tracks are free at this position, use them
+                if (!track1HasOverlap && !track2HasOverlap)
+                {
+                    textTrack = track1;
+                    audioTrack = track2;
                     break;
                 }
             }
 
-            // If all tracks have overlapping blocks, create new track
-            if (targetTrack == null)
+            // If no consecutive tracks found, create new tracks
+            if (textTrack == null || audioTrack == null)
             {
+                // Create two new tracks
                 timelineVm.AddTrackInternal();
-                targetTrack = timelineVm.Tracks.Last();
+                timelineVm.AddTrackInternal();
+                textTrack = timelineVm.Tracks[timelineVm.Tracks.Count - 2];
+                audioTrack = timelineVm.Tracks.Last();
             }
 
             // Create text block (yellow-green)
@@ -193,43 +210,20 @@ namespace VideoCreatorWPF
                 FontFamily = _currentFontFamily,
                 FontSize = _currentFontSize,
                 TextColor = _currentTextColor,
-                TrackId = targetTrack.Items.Count > 0 ? targetTrack.Items.Last().TrackId : Guid.NewGuid()
+                TrackId = textTrack.Items.Count > 0 ? textTrack.Items.Last().TrackId : Guid.NewGuid()
             };
 
-            // Add text block to target track
-            targetTrack.Items.Add(textBlock);
+            // Add text block to text track
+            textTrack.Items.Add(textBlock);
 
-            // If audio was generated, create audio block on next track with SAME duration
-            var textTrackIndex = timelineVm.Tracks.IndexOf(targetTrack);
-            if (audioPath != null && timelineVm.Tracks.Count > textTrackIndex + 1)
+            // If audio was generated, create audio block on audio track with SAME duration
+            if (audioPath != null)
             {
-                var audioTrack = timelineVm.Tracks[textTrackIndex + 1];
                 var audioBlock = new TimelineBlock
                 {
                     CharacterId = textBlock.CharacterId,
                     StartFrame = playheadFrame,
                     Duration = blockDuration, // Same duration as text block
-                    Text = text,
-                    AudioPath = audioPath,
-                    BackgroundColor = "#FF4500", // Red for audio
-                    Type = BlockType.Audio,
-                    FontFamily = _currentFontFamily,
-                    FontSize = _currentFontSize,
-                    TextColor = _currentTextColor,
-                    TrackId = audioTrack.Items.Count > 0 ? audioTrack.Items.Last().TrackId : Guid.NewGuid()
-                };
-                audioTrack.Items.Add(audioBlock);
-            }
-            else if (audioPath != null)
-            {
-                // Create new track for audio
-                timelineVm.AddTrackInternal();
-                var audioTrack = timelineVm.Tracks.Last();
-                var audioBlock = new TimelineBlock
-                {
-                    CharacterId = textBlock.CharacterId,
-                    StartFrame = playheadFrame,
-                    Duration = blockDuration,
                     Text = text,
                     AudioPath = audioPath,
                     BackgroundColor = "#FF4500", // Red for audio
