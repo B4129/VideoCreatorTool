@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows;
 
 namespace VideoCreatorWPF.Views
 {
@@ -266,10 +265,8 @@ namespace VideoCreatorWPF.Views
         private ViewModels.TimelineViewModel? _pendingTimelineVmForBlock;
         private MainWindow? _pendingMainWindowForBlock;
 
-        // プレビュー更新用のタイマー
-        private System.Threading.Timer? _previewUpdateTimer;
+        // プレビュー更新用
         private string? _lastVideoPath;
-        private int _lastVideoFrame;
 
         private void PreviewGrid_Drop(object sender, DragEventArgs e)
         {
@@ -461,97 +458,6 @@ namespace VideoCreatorWPF.Views
                 _isPlaying = true;
                 PlayPauseButton.Content = "⏸";
             }
-        }
-
-        // Preview enhancement event handlers
-        private void ResolutionCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ResolutionCombo.SelectedItem is not ComboBoxItem item) return;
-
-            var scale = 1.0;
-            if (item.Tag is string tag)
-            {
-                double.TryParse(tag, out scale);
-            }
-
-            // Apply resolution scale to preview
-            PreviewGrid.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
-        }
-
-        private void GridToggle_Click(object sender, RoutedEventArgs e)
-        {
-            if (GridLinesCanvas != null)
-            {
-                GridLinesCanvas.Visibility = GridToggle.IsChecked == true
-                    ? System.Windows.Visibility.Visible
-                    : System.Windows.Visibility.Collapsed;
-            }
-        }
-
-        private void SafeAreaToggle_Click(object sender, RoutedEventArgs e)
-        {
-            if (SafeAreaCanvas != null)
-            {
-                SafeAreaCanvas.Visibility = SafeAreaToggle.IsChecked == true
-                    ? System.Windows.Visibility.Visible
-                    : System.Windows.Visibility.Collapsed;
-            }
-        }
-
-        private void SafeAreaCanvas_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            if (SafeAreaCanvas == null) return;
-
-            var canvasWidth = e.NewSize.Width;
-            var canvasHeight = e.NewSize.Height;
-
-            if (canvasWidth <= 0 || canvasHeight <= 0) return;
-
-            // 90% safe area (5% margin on each side)
-            var margin90 = canvasWidth * 0.05;
-            Canvas.SetLeft(SafeArea90, margin90);
-            Canvas.SetTop(SafeArea90, canvasHeight * 0.05);
-            SafeArea90.Width = canvasWidth * 0.9;
-            SafeArea90.Height = canvasHeight * 0.9;
-
-            // 93% safe area (3.5% margin on each side)
-            var margin93 = canvasWidth * 0.035;
-            Canvas.SetLeft(SafeArea93, margin93);
-            Canvas.SetTop(SafeArea93, canvasHeight * 0.035);
-            SafeArea93.Width = canvasWidth * 0.93;
-            SafeArea93.Height = canvasHeight * 0.93;
-        }
-
-        private void OnionSkinToggle_Click(object sender, RoutedEventArgs e)
-        {
-            if (OnionSkinCanvas != null)
-            {
-                OnionSkinCanvas.Visibility = OnionSkinToggle.IsChecked == true
-                    ? System.Windows.Visibility.Visible
-                    : System.Windows.Visibility.Collapsed;
-            }
-        }
-
-        private void FitModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (FitModeCombo.SelectedItem is not ComboBoxItem item) return;
-            var index = FitModeCombo.SelectedIndex;
-
-            // Apply fit mode
-            switch (index)
-            {
-                case 0: // Fit
-                    VideoPlayer.Stretch = System.Windows.Media.Stretch.Uniform;
-                    break;
-                case 1: // Fill
-                    VideoPlayer.Stretch = System.Windows.Media.Stretch.UniformToFill;
-                    break;
-                case 2: // 100%
-                    VideoPlayer.Stretch = System.Windows.Media.Stretch.None;
-                    break;
-            }
-
-            // No-op: Grid doesn't have StretchProperty
         }
     }
 }
