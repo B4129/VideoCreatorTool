@@ -353,9 +353,11 @@ namespace VideoCreatorWPF.ViewModels
                 var track = _tracks.FirstOrDefault(t => t.Items.Contains(block));
                 if (track == null) continue;
 
-                // Split at the middle of the block
-                var splitFrame = block.Duration / 2;
-                if (splitFrame <= 0) continue;
+                // Split at the current frame position (playhead)
+                var splitFrame = CurrentFrame - block.StartFrame;
+
+                // Validate split position
+                if (splitFrame <= 0 || splitFrame >= block.Duration) continue;
 
                 var absoluteFrame = block.StartFrame + splitFrame;
 
@@ -372,7 +374,19 @@ namespace VideoCreatorWPF.ViewModels
                     FontSize = block.FontSize,
                     TextColor = block.TextColor,
                     AudioPath = block.AudioPath,
-                    TrackId = block.TrackId
+                    VideoPath = block.VideoPath,
+                    TrackId = block.TrackId,
+                    Name = block.Name + "_L",
+                    Volume = block.Volume,
+                    PlaybackSpeed = block.PlaybackSpeed,
+                    Opacity = block.Opacity,
+                    Loop = block.Loop,
+                    TextPositionX = block.TextPositionX,
+                    TextPositionY = block.TextPositionY,
+                    FadeInFrames = block.FadeInFrames,
+                    FadeOutFrames = block.FadeOutFrames,
+                    AudioFadeInFrames = block.AudioFadeInFrames,
+                    AudioFadeOutFrames = block.AudioFadeOutFrames
                 };
 
                 // Create right block
@@ -388,7 +402,19 @@ namespace VideoCreatorWPF.ViewModels
                     FontSize = block.FontSize,
                     TextColor = block.TextColor,
                     AudioPath = block.AudioPath,
-                    TrackId = block.TrackId
+                    VideoPath = block.VideoPath,
+                    TrackId = block.TrackId,
+                    Name = block.Name + "_R",
+                    Volume = block.Volume,
+                    PlaybackSpeed = block.PlaybackSpeed,
+                    Opacity = block.Opacity,
+                    Loop = block.Loop,
+                    TextPositionX = block.TextPositionX,
+                    TextPositionY = block.TextPositionY,
+                    FadeInFrames = block.FadeInFrames,
+                    FadeOutFrames = block.FadeOutFrames,
+                    AudioFadeInFrames = block.AudioFadeInFrames,
+                    AudioFadeOutFrames = block.AudioFadeOutFrames
                 };
 
                 blocksToRemove.Add((track, block));
