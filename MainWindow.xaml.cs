@@ -222,7 +222,12 @@ namespace VideoCreatorWPF
                 audioTrack.Items.Add(audioBlock);
             }
 
-            ViewModel.StatusMessage = $"字幕追加: {textBlock.Text}";
+            // プレイヘッドの位置を更新
+            timelineVm.CurrentFrame = playheadFrame;
+            TimelineViewControl.RefreshPlayhead();
+            TimelineViewControl.ScrollToFrame(playheadFrame);
+
+            ViewModel.StatusMessage = $"字幕追加: {textBlock.Text} (フレーム {playheadFrame} に配置)";
         }
 
         private int GetSpeakerIdFromCharacterName(string name)
