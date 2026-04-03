@@ -25,7 +25,25 @@ git push origin develop
 
 ## Issue管理
 - 修正が完了したIssueは順次closeする
-- GitHub APIまたはgh CLIを使用してclose
+- **close前に、修正方針・実装内容を該当Issueにコメントとして記載**
+- コメント例：
+  ```
+  ## 修正方針
+
+  【問題認識】
+  （Issueの内容を簡潔に要約）
+
+  【修正方針】
+  （実際に行った修正内容を箇条書き）
+
+  【実装詳細】
+  - 変更ファイル: xxx.cs, xxx.xaml
+  - 変更内容: ...
+
+  【確認方法】
+  （ユーザーが確認する際の注意点など）
+  ```
+- コメント後、GitHub APIまたはgh CLIでclose
 - コミットメッセージにIssue番号を含める（例: `fix: Issue #3 - 問題の説明`）
 
 ## スクリーンショット
