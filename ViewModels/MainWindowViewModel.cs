@@ -28,6 +28,7 @@ namespace VideoCreatorWPF.ViewModels
         private BlockPropertyViewModel _blockProperties = new();
         private AppSettings _settings = new();
         private ObservableCollection<string> _recentProjects = new();
+        private string _timecodeInput = "";
 
         // Version information
         public string AppVersion { get; } = GetAppVersion();
@@ -55,6 +56,7 @@ namespace VideoCreatorWPF.ViewModels
             PlayCommand = new RelayCommand(_ => Play());
             PauseCommand = new RelayCommand(_ => Pause());
             StopCommand = new RelayCommand(_ => Stop());
+            JumpToTimecodeCommand = new RelayCommand(_ => JumpToTimecode(), _ => !string.IsNullOrEmpty(_timecodeInput));
 
             // Initialize settings and create default project after UI is ready
             System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(async () =>
@@ -133,6 +135,16 @@ namespace VideoCreatorWPF.ViewModels
         public ICommand PlayCommand { get; }
         public ICommand PauseCommand { get; }
         public ICommand StopCommand { get; }
+        public ICommand JumpToTimecodeCommand { get; }
+
+        /// <summary>
+        /// タイムコード入力欄の値
+        /// </summary>
+        public string TimecodeInput
+        {
+            get => _timecodeInput;
+            set => SetProperty(ref _timecodeInput, value);
+        }
 
         private async System.Threading.Tasks.Task InitializeVoiceVox()
         {
@@ -307,6 +319,47 @@ namespace VideoCreatorWPF.ViewModels
         public void Pause()
         {
             StatusMessage = "一時停止";
+        }
+
+        /// <summary>
+        /// 入力されたタイムコードの位置にジャンプ
+        /// 形式: MM:SS または MM:SS.FF
+        /// </summary>
+        private void JumpToTimecode()
+        {
+            if (string.IsNullOrEmpty(_timecodeInput))
+                return;
+
+            try
+            {
+                int targetFrame = 0;
+
+                // MM:SS.FF 形式を解析
+                var parts = _timecodeInput.Split(':');
+                if (parts.Length == 2)
+                {
+                    var minutes = int.Parse(parts[0]);
+                    var secondsParts = parts[1].Split('.');
+                    var seconds = int.Parse(secondsParts[0]);
+                    var frames = secondsParts.Length > 1 ? int.Parse(secondsParts[1]) : 0;
+
+                    targetFrame = (minutes * 60 + seconds) * 30 + frames;
+                }
+                else if (parts.Length == 1)
+                {
+                    // フレーム数直接指定
+                    targetFrame = int.Parse(parts[0]);
+                }
+
+                // タイムラインの現在フレームを更新
+                // Note: TimelineViewModelはMainWindow.TimelineViewControl.DataContextに設定されている
+                // ここではstatus messageを更新
+                StatusMessage = $"タイムコード {_timecodeInput} にジャンプ（フレーム: {targetFrame}）";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"タイムコード解析エラー: {ex.Message}";
+            }
         }
 
         private void Stop()

@@ -22,6 +22,9 @@ namespace VideoCreatorWPF.ViewModels
         private bool _isSnapEnabled = true;
         private double _pixelsPerFrame = 0.5;
         private readonly ObservableCollection<TimelineBlock> _selectedBlocks = new();
+        private int _selectionStartFrame = -1;
+        private int _selectionEndFrame = -1;
+        private bool _isSelectingRange = false;
 
         public event Action<object, TimelineBlock>? BlockSelected;
 
@@ -132,6 +135,33 @@ namespace VideoCreatorWPF.ViewModels
         public ObservableCollection<TimelineBlock> SelectedBlocks
         {
             get => _selectedBlocks;
+        }
+
+        /// <summary>
+        /// 範囲選択の開始フレーム
+        /// </summary>
+        public int SelectionStartFrame
+        {
+            get => _selectionStartFrame;
+            set => SetProperty(ref _selectionStartFrame, value);
+        }
+
+        /// <summary>
+        /// 範囲選択の終了フレーム
+        /// </summary>
+        public int SelectionEndFrame
+        {
+            get => _selectionEndFrame;
+            set => SetProperty(ref _selectionEndFrame, value);
+        }
+
+        /// <summary>
+        /// 範囲選択中かどうか
+        /// </summary>
+        public bool IsSelectingRange
+        {
+            get => _isSelectingRange;
+            set => SetProperty(ref _isSelectingRange, value);
         }
 
         public double MinPixelsPerFrameConst => Core.TimelineConstants.MinPixelsPerFrame;
@@ -505,6 +535,107 @@ namespace VideoCreatorWPF.ViewModels
                 b.IsSelected = false;
             }
             SelectedBlocks.Clear();
+            SelectionStartFrame = -1;
+            SelectionEndFrame = -1;
+            IsSelectingRange = false;
+        }
+
+        /// <summary>
+        /// 範囲選択を開始
+        /// </summary>
+        public void StartRangeSelection(int frame)
+        {
+            SelectionStartFrame = frame;
+            SelectionEndFrame = frame;
+            IsSelectingRange = true;
+        }
+
+        /// <summary>
+        /// 範囲選択を更新
+        /// </summary>
+        public void UpdateRangeSelection(int frame)
+        {
+            if (IsSelectingRange)
+            {
+                SelectionEndFrame = frame;
+                SelectBlocksInRange(SelectionStartFrame, SelectionEndFrame);
+            }
+        }
+
+        /// <summary>
+        /// 範囲選択を完了
+        /// </summary>
+        public void EndRangeSelection()
+        {
+            IsSelectingRange = false;
+        }
+
+        /// <summary>
+        /// 指定範囲内のブロックを選択
+        /// </summary>
+        public void SelectBlocksInRange(int startFrame, int endFrame)
+        {
+            var minFrame = Math.Min(startFrame, endFrame);
+            var maxFrame = Math.Max(startFrame, endFrame);
+
+            // 前の選択をクリア
+            foreach (var b in SelectedBlocks.ToList())
+            {
+                b.IsSelected = false;
+            }
+            SelectedBlocks.Clear();
+
+            // 範囲内のブロックを選択
+            foreach (var track in _tracks)
+            {
+                foreach (var block in track.Items)
+                {
+                    var blockEnd = block.StartFrame + block.Duration;
+                    // ブロックが範囲内にあるかチェック
+                    if (block.StartFrame < maxFrame && blockEnd > minFrame)
+                    {
+                        SelectedBlocks.Add(block);
+                        block.IsSelected = true;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 選択したブロックを一括削除
+        /// </summary>
+        public void DeleteSelectedBlocks()
+        {
+            if (SelectedBlocks.Count == 0) return;
+
+            var blocksToDelete = SelectedBlocks.ToList();
+            foreach (var block in blocksToDelete)
+            {
+                var track = _tracks.FirstOrDefault(t => t.Items.Contains(block));
+                if (track != null)
+                {
+                    track.Items.Remove(block);
+                }
+            }
+
+            SelectedBlocks.Clear();
+            SelectionStartFrame = -1;
+            SelectionEndFrame = -1;
+            IsSelectingRange = false;
+        }
+
+        /// <summary>
+        /// 選択したブロックを一括移動
+        /// </summary>
+        public void MoveSelectedBlocks(int framesToMove)
+        {
+            if (SelectedBlocks.Count == 0) return;
+
+            foreach (var block in SelectedBlocks.ToList())
+            {
+                var newFrame = Math.Max(0, block.StartFrame + framesToMove);
+                block.StartFrame = newFrame;
+            }
         }
 
         private System.Threading.Timer? _playTimer;
