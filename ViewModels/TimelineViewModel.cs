@@ -512,7 +512,10 @@ namespace VideoCreatorWPF.ViewModels
 
             _playTimer = new System.Threading.Timer(_ =>
             {
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                var app = System.Windows.Application.Current;
+                if (app == null) return;
+
+                app.Dispatcher.Invoke(() =>
                 {
                     if (CurrentFrame < TotalFrames)
                     {
