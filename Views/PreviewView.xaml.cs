@@ -138,13 +138,14 @@ namespace VideoCreatorWPF.Views
 
         private void VideoPlayer_MediaOpened(object sender, RoutedEventArgs e)
         {
+            System.Diagnostics.Debug.WriteLine($"[Preview] MediaOpened called");
             try
             {
                 // Update duration when video is loaded
                 if (VideoPlayer.NaturalDuration.HasTimeSpan)
                 {
                     var durationSeconds = VideoPlayer.NaturalDuration.TimeSpan.TotalSeconds;
-                    System.Diagnostics.Debug.WriteLine($"VideoPlayer MediaOpened: {durationSeconds} seconds");
+                    System.Diagnostics.Debug.WriteLine($"[Preview] VideoPlayer MediaOpened: {durationSeconds} seconds");
 
                     if (DataContext is ViewModels.PreviewViewModel viewModel)
                     {
@@ -156,7 +157,7 @@ namespace VideoCreatorWPF.Views
                         mainWindow.TimelineViewControl.DataContext is ViewModels.TimelineViewModel timelineVm)
                     {
                         var totalFrames = (int)(durationSeconds * 30);
-                        System.Diagnostics.Debug.WriteLine($"Setting total frames: {totalFrames} (from {durationSeconds}s at 30fps)");
+                        System.Diagnostics.Debug.WriteLine($"[Preview] Setting total frames: {totalFrames} (from {durationSeconds}s at 30fps)");
                         timelineVm.SetTotalFrames(totalFrames);
                         mainWindow.TimelineViewControl.UpdateRuler(totalFrames);
                     }
@@ -165,7 +166,7 @@ namespace VideoCreatorWPF.Views
                     if (_pendingVideoFilePath != null && _pendingTrackForBlock != null && _pendingTimelineVmForBlock != null && _pendingMainWindowForBlock != null)
                     {
                         var videoDuration = (int)(durationSeconds * 30); // 30fps
-                        System.Diagnostics.Debug.WriteLine($"Creating video block with duration: {videoDuration} frames (at 30fps)");
+                        System.Diagnostics.Debug.WriteLine($"[Preview] Creating video block with duration: {videoDuration} frames (at 30fps)");
 
                         var videoBlock = new Models.TimelineBlock
                         {
@@ -200,12 +201,12 @@ namespace VideoCreatorWPF.Views
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("VideoPlayer NaturalDuration does not have TimeSpan");
+                    System.Diagnostics.Debug.WriteLine("[Preview] VideoPlayer NaturalDuration does not have TimeSpan");
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error in VideoPlayer_MediaOpened: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[Preview] Error in VideoPlayer_MediaOpened: {ex.Message}");
             }
 
             // Start position update timer

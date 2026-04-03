@@ -52,6 +52,21 @@ namespace VideoCreatorWPF
                                 // プレビューを更新
                                 previewVm.UpdateFrame(_timelineViewModel.CurrentFrame);
                             }
+                            else if (args.PropertyName == nameof(TimelineViewModel.TotalFrames))
+                            {
+                                // TotalFramesが変更されたらルーラーを更新
+                                TimelineViewControl.UpdateRuler(_timelineViewModel.TotalFrames);
+                            }
+                        };
+
+                        // Subscribe to PixelsPerFrame changes to update ruler on zoom
+                        _timelineViewModel.PropertyChanged += (s, args) =>
+                        {
+                            if (args.PropertyName == nameof(TimelineViewModel.PixelsPerFrame))
+                            {
+                                // ズーム変更时にもルーラーを再描画
+                                TimelineViewControl.UpdateRuler(_timelineViewModel.TotalFrames);
+                            }
                         };
 
                         // Update Space key binding to use TimelineViewModel's PlayCommand

@@ -129,7 +129,14 @@ namespace VideoCreatorWPF.ViewModels
         public double PixelsPerFrame
         {
             get => _pixelsPerFrame;
-            set => SetProperty(ref _pixelsPerFrame, value);
+            set
+            {
+                if (SetProperty(ref _pixelsPerFrame, value))
+                {
+                    // PixelsPerFrameが変更されたらTotalFramesも更新通知
+                    OnPropertyChanged(nameof(TotalFrames));
+                }
+            }
         }
 
         private int? _totalFrames;
