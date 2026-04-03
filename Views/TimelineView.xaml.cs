@@ -869,14 +869,19 @@ namespace VideoCreatorWPF.Views
         private void TimelineGrid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             // Set playhead position when clicking on empty timeline area
-            var mousePos = e.GetPosition(this);
+            // Get position relative to the PlayheadCanvas to account for the track header offset
+            var playheadCanvas = FindName("PlayheadCanvas") as UIElement;
+            if (playheadCanvas == null) return;
+
             if (DataContext is ViewModels.TimelineViewModel timelineVm)
             {
+                var mousePos = e.GetPosition(playheadCanvas);
                 var pixelsPerFrame = timelineVm.PixelsPerFrame;
                 var frame = (int)(mousePos.X / pixelsPerFrame);
                 if (frame >= 0)
                 {
                     timelineVm.CurrentFrame = frame;
+                    UpdatePlayheadPosition();
                 }
             }
         }
