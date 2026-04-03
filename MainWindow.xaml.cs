@@ -88,6 +88,17 @@ namespace VideoCreatorWPF
                         _timelineViewModel.BlockSelected += (s, block) =>
                         {
                             ViewModel.BlockProperties.UpdateFromBlock(block);
+
+                            // If text block, load standing image for current character
+                            if (block.Type == BlockType.Dialogue)
+                            {
+                                var previewVm = PreviewViewControl.DataContext as ViewModels.PreviewViewModel;
+                                if (previewVm != null)
+                                {
+                                    previewVm.LoadStandingImage(block.CharacterId);
+                                    previewVm.DetectEmotionFromText(block.Text);
+                                }
+                            }
                         };
 
                         // Subscribe to PixelsPerFrame changes to update ruler on zoom

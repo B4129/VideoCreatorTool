@@ -32,6 +32,35 @@
                 <Grid Background="Black"
                       Visibility="{Binding CurrentVideoPath, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
 
+                <!-- Standing image display -->
+                <Image x:Name="StandingImage" Stretch="Uniform" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                       Width="{Binding PreviewWidth}" Height="{Binding PreviewHeight}"
+                       Visibility="{Binding StandingImagePath, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding StandingImagePath}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Image.Style>
+                </Image>
+
+                <!-- Emotion effect overlay -->
+                <Image x:Name="EmotionEffect" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Width="200" Height="200" Visibility="{Binding EmotionEffectPath, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Image.Style>
+                        <Style TargetType="Image">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding EmotionEffectPath}" Value="{x:Null}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Image.Style>
+                </Image>
+
                 <!-- Canvas for overlays (grid, safe area, onion skin) -->
                 <Canvas x:Name="OverlayCanvas" IsHitTestVisible="False">
                     <!-- Grid lines -->

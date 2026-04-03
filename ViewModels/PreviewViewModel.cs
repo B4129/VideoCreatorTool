@@ -24,6 +24,8 @@ namespace VideoCreatorWPF.ViewModels
         private MediaPlayer? _mediaPlayer;
         private string? _currentVideoPath;
         private int _currentVideoStartFrame;
+        private string? _standingImagePath;
+        private string? _emotionEffectPath;
 
         public PreviewViewModel(ProjectViewModel project)
         {
@@ -31,6 +33,24 @@ namespace VideoCreatorWPF.ViewModels
             PlayCommand = new RelayCommand(_ => Play(), _ => true);
             PauseCommand = new RelayCommand(_ => Pause(), _ => true);
             StopCommand = new RelayCommand(_ => Stop(), _ => true);
+        }
+
+        /// <summary>
+        /// 立ち絵画像パス
+        /// </summary>
+        public string? StandingImagePath
+        {
+            get => _standingImagePath;
+            set => SetProperty(ref _standingImagePath, value);
+        }
+
+        /// <summary>
+        /// 感情エフェクト画像パス
+        /// </summary>
+        public string? EmotionEffectPath
+        {
+            get => _emotionEffectPath;
+            set => SetProperty(ref _emotionEffectPath, value);
         }
 
         /// <summary>
@@ -467,6 +487,71 @@ namespace VideoCreatorWPF.ViewModels
         public void SetMediaElementSource(System.Windows.Controls.MediaElement mediaElement, string videoPath)
         {
             mediaElement.Source = new Uri(videoPath);
+        }
+
+        /// <summary>
+        /// キャラクターの立ち絵画像を読み込む
+        /// </summary>
+        public void LoadStandingImage(Guid characterId)
+        {
+            var character = _project.Characters.FirstOrDefault(c => c.Id == characterId);
+            if (character != null && !string.IsNullOrEmpty(character.ImagePath) && File.Exists(character.ImagePath))
+            {
+                try
+                {
+                    var bitmap = new BitmapImage(new Uri(character.ImagePath));
+                    StandingImagePath = character.ImagePath;
+                    Debug.WriteLine($"[PreviewViewModel] Loaded standing image: {character.ImagePath}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[PreviewViewModel] Error loading standing image: {ex.Message}");
+                    StandingImagePath = null;
+                }
+            }
+            else
+            {
+                StandingImagePath = null;
+            }
+        }
+
+        /// <summary>
+        /// テキストブロックの文字列から感情エフェクトを判定
+        /// </summary>
+        public void DetectEmotionFromText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                EmotionEffectPath = null;
+                return;
+            }
+
+            // TODO: 感情検出マッピング（将来的に高度なNLPを使う）
+            // 簡易版: キーワードに基づく感情判定
+            var emotionMap = new Dictionary<string, string>
+            {
+                { "笑", "emotions/joy.png" },
+                { "泣", "emotions/cry.png" },
+                { "怒", "emotions/anger.png" },
+                { "驚", "emotions/surprise.png" }
+            };
+
+            foreach (var kvp in emotionMap)
+            {
+                if (text.Contains(kvp.Key))
+                {
+                    var basePath = AppDomain.CurrentDomain.BaseDirectory;
+                    var fullPath = Path.Combine(basePath, kvp.Value);
+                    if (File.Exists(fullPath))
+                    {
+                        EmotionEffectPath = fullPath;
+                        Debug.WriteLine($"[PreviewViewModel] Detected emotion: {kvp.Key} -> {fullPath}");
+                        return;
+                    }
+                }
+            }
+
+            EmotionEffectPath = null;
         }
     }
 }
