@@ -135,7 +135,6 @@
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="36"/>
                                                 <ColumnDefinition Width="36"/>
-                                                <ColumnDefinition Width="36"/>
                                             </Grid.ColumnDefinitions>
 
                                             <!-- Track name with inline editing -->
@@ -146,37 +145,8 @@
                                                            ToolTip="{Binding Name}"/>
                                             </Grid>
 
-                                            <!-- Visibility toggle (eye icon) -->
+                                            <!-- Lock toggle (improved: open/closed lock icon with color change) -->
                                             <ToggleButton Grid.Column="1" Width="28" Height="28"
-                                                          IsChecked="{Binding IsVisible}"
-                                                          Background="#4a4a4a"
-                                                          ToolTip="表示/非表示">
-                                                <ToggleButton.Style>
-                                                    <Style TargetType="ToggleButton">
-                                                        <Setter Property="Template">
-                                                            <Setter.Value>
-                                                                <ControlTemplate TargetType="ToggleButton">
-                                                                    <Border Background="{TemplateBinding Background}"
-                                                                            CornerRadius="4"
-                                                                            Width="28" Height="28">
-                                                                        <Path Data="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.7,7.6 1,12C2.7,16.4 7,19.5 12,19.5C17,19.5 21.3,16.4 23,12C21.3,7.6 17,4.5 12,4.5Z"
-                                                                              Fill="White" Width="16" Height="16"
-                                                                              Stretch="Uniform"/>
-                                                                    </Border>
-                                                                </ControlTemplate>
-                                                            </Setter.Value>
-                                                        </Setter>
-                                                        <Style.Triggers>
-                                                            <Trigger Property="IsChecked" Value="False">
-                                                                <Setter Property="Background" Value="#2a2a2a"/>
-                                                            </Trigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </ToggleButton.Style>
-                                            </ToggleButton>
-
-                                            <!-- Lock toggle -->
-                                            <ToggleButton Grid.Column="2" Width="28" Height="28"
                                                           IsChecked="{Binding IsEnabled}"
                                                           Background="#4a4a4a"
                                                           ToolTip="ロック/アンロック">
@@ -216,7 +186,7 @@
                                             </ToggleButton>
 
                                             <!-- Delete button (trash icon) -->
-                                            <Button Grid.Column="3" Width="28" Height="28"
+                                            <Button Grid.Column="2" Width="28" Height="28"
                                                     Click="RemoveTrack_Click"
                                                     Background="#4a4a4a"
                                                     ToolTip="トラックを削除">
