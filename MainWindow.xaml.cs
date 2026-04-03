@@ -65,7 +65,7 @@ namespace VideoCreatorWPF
             InputBindings.Add(new InputBinding(ViewModel.NewProjectCommand, new KeyGesture(Key.N, ModifierKeys.Control)));
             InputBindings.Add(new InputBinding(ViewModel.OpenProjectCommand, new KeyGesture(Key.O, ModifierKeys.Control)));
             InputBindings.Add(new InputBinding(ViewModel.SaveProjectCommand, new KeyGesture(Key.S, ModifierKeys.Control)));
-            InputBindings.Add(new InputBinding(ViewModel.PlayCommand, new KeyGesture(Key.Space)));
+            // SpaceキーはTimelineViewModelのPlayCommandにバインド（再生/一時停止トグル）
 
             // ウィンドウ読み込み時にスクリーンショットを撮影
             Loaded += MainWindow_Loaded;
@@ -493,10 +493,11 @@ namespace VideoCreatorWPF
                 // 既存のバインディングをクリア
                 InputBindings.Clear();
 
-                // 再度すべてのキーバインディングを設定（SpaceはTimelineViewModelを使用）
+                // 再度すべてのキーバインディングを設定
                 InputBindings.Add(new InputBinding(ViewModel.NewProjectCommand, new KeyGesture(Key.N, ModifierKeys.Control)));
                 InputBindings.Add(new InputBinding(ViewModel.OpenProjectCommand, new KeyGesture(Key.O, ModifierKeys.Control)));
                 InputBindings.Add(new InputBinding(ViewModel.SaveProjectCommand, new KeyGesture(Key.S, ModifierKeys.Control)));
+                // SpaceキーはTimelineViewModelのPlayCommandにバインド
                 InputBindings.Add(new InputBinding(_timelineViewModel.PlayCommand, new KeyGesture(Key.Space)));
             }
         }

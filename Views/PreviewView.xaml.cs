@@ -35,35 +35,54 @@ namespace VideoCreatorWPF.Views
         {
             if (e.PropertyName == nameof(ViewModels.PreviewViewModel.CurrentVideoPath))
             {
-                if (DataContext is ViewModels.PreviewViewModel vm && vm.CurrentVideoPath != null)
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
-                    // 動画パスが変更されたら読み込み
-                    if (_lastVideoPath != vm.CurrentVideoPath)
+                    if (DataContext is ViewModels.PreviewViewModel vm && vm.CurrentVideoPath != null)
                     {
-                        _lastVideoPath = vm.CurrentVideoPath;
-                        VideoPlayer.Source = new Uri(vm.CurrentVideoPath);
-                        VideoPlayer.Position = TimeSpan.Zero;
-                    }
-
-                    // 現在のフレーム位置にシーク
-                    if (_lastVideoPath != null)
-                    {
-                        var fps = 30.0;
-                        var offsetFrames = vm.CurrentFrame - vm.CurrentVideoStartFrame;
-                        var positionSeconds = offsetFrames / fps;
-                        if (positionSeconds >= 0)
+                        Debug.WriteLine($"[Preview] CurrentVideoPath changed: {vm.CurrentVideoPath}");
+                        // 動画パスが変更されたら読み込み
+                        if (_lastVideoPath != vm.CurrentVideoPath)
                         {
-                            VideoPlayer.Position = TimeSpan.FromSeconds(positionSeconds);
-                            VideoPlayer.Pause(); // 再生せずにシークのみ
+                            _lastVideoPath = vm.CurrentVideoPath;
+                            try
+                            {
+                                VideoPlayer.BeginInit();
+                                VideoPlayer.Source = new Uri(vm.CurrentVideoPath);
+                                VideoPlayer.LoadedBehavior = MediaState.Manual;
+                                VideoPlayer.UnloadedBehavior = MediaState.Stop;
+                                VideoPlayer.EndInit();
+
+                                Debug.WriteLine($"[Preview] Video loaded, waiting for MediaOpened");
+
+                                // 現在のフレーム位置にシーク（MediaOpenedで実行）
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine($"[Preview] Error loading video: {ex.Message}");
+                            }
+                        }
+                        else
+                        {
+                            // 同じ動画ならシークのみ
+                            var fps = 30.0;
+                            var offsetFrames = vm.CurrentFrame - vm.CurrentVideoStartFrame;
+                            var positionSeconds = offsetFrames / fps;
+                            Debug.WriteLine($"[Preview] Seeking to {positionSeconds}s (frame {vm.CurrentFrame}, start {vm.CurrentVideoStartFrame})");
+                            if (positionSeconds >= 0 && VideoPlayer.Source != null)
+                            {
+                                VideoPlayer.Position = TimeSpan.FromSeconds(positionSeconds);
+                                VideoPlayer.Pause();
+                            }
                         }
                     }
-                }
-                else
-                {
-                    // 動画がない場合はクリア
-                    VideoPlayer.Source = null;
-                    _lastVideoPath = null;
-                }
+                    else
+                    {
+                        Debug.WriteLine($"[Preview] Clearing video");
+                        // 動画がない場合はクリア
+                        VideoPlayer.Source = null;
+                        _lastVideoPath = null;
+                    }
+                });
             }
         }
 

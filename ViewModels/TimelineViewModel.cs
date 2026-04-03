@@ -335,8 +335,31 @@ namespace VideoCreatorWPF.ViewModels
 
         private System.Threading.Timer? _playTimer;
 
+        /// <summary>
+        /// 再生/一時停止をトグル
+        /// </summary>
         private void Play()
         {
+            if (IsPlaying)
+            {
+                // 再生中なら一時停止
+                Pause();
+            }
+            else
+            {
+                // 停止中なら再生
+                StartPlayback();
+            }
+        }
+
+        private void StartPlayback()
+        {
+            // 既に再生中の場合は何もしない
+            if (IsPlaying && _playTimer != null)
+            {
+                return;
+            }
+
             IsPlaying = true;
             _playTimer = new System.Threading.Timer(_ =>
             {

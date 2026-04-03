@@ -82,15 +82,22 @@ namespace VideoCreatorWPF.ViewModels
         {
             CurrentFrame = frame;
 
+            // デバッグ: 総トラック数とブロック数を表示
+            Debug.WriteLine($"[Preview] UpdateFrame: frame={frame}, tracks={_project.Tracks.Count}");
+            int totalBlocks = _project.Tracks.Sum(t => t.Items.Count);
+            Debug.WriteLine($"[Preview] Total blocks: {totalBlocks}");
+
             // プレイヘッド位置の動画ブロックを探す
             TimelineBlock? videoBlock = null;
             foreach (var track in _project.Tracks)
             {
                 foreach (var block in track.Items)
                 {
+                    Debug.WriteLine($"[Preview] Block: Type={block.Type}, Start={block.StartFrame}, Duration={block.Duration}, AudioPath={block.AudioPath}");
                     if (block.Type == BlockType.Video &&
                         frame >= block.StartFrame && frame < block.StartFrame + block.Duration)
                     {
+                        Debug.WriteLine($"[Preview] Found video block at frame {frame}: {block.AudioPath}");
                         videoBlock = block;
                         break;
                     }
@@ -100,11 +107,13 @@ namespace VideoCreatorWPF.ViewModels
 
             if (videoBlock != null)
             {
+                Debug.WriteLine($"[Preview] Setting CurrentVideoPath: {videoBlock.AudioPath}");
                 CurrentVideoPath = videoBlock.AudioPath;
                 CurrentVideoStartFrame = videoBlock.StartFrame;
             }
             else
             {
+                Debug.WriteLine($"[Preview] No video block found at frame {frame}");
                 CurrentVideoPath = null;
                 CurrentVideoStartFrame = 0;
             }
