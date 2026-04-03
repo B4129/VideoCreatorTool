@@ -44,6 +44,14 @@
         "net9.0-windows7.0": {
           "targetAlias": "net9.0-windows",
           "dependencies": {
+            "FFMpegCore": {
+              "target": "Package",
+              "version": "[5.4.0, )"
+            },
+            "FFMpegCore.Extensions.System.Drawing.Common": {
+              "target": "Package",
+              "version": "[5.0.3, )"
+            },
             "MaterialDesignThemes": {
               "target": "Package",
               "version": "[5.1.0, )"

@@ -636,8 +636,16 @@ namespace VideoCreatorWPF.ViewModels
             System.Diagnostics.Debug.WriteLine($"[Audio] PlayAudioBlockAsync START: Id={block.Id}, Path={block.AudioPath}");
             try
             {
-                await Services.AudioService.PlayAudioAsync(block.AudioPath, 0, block.PlaybackSpeed);
-                System.Diagnostics.Debug.WriteLine($"[Audio] PlayAudioBlockAsync COMPLETED: Id={block.Id}");
+                // Get track for this block
+                var track = _tracks.FirstOrDefault(t => t.Items.Contains(block));
+                var trackVm = track != null ? Tracks.FirstOrDefault(t => t == track) : null;
+
+                // Get volume and mute status from track
+                var volume = trackVm?.Volume ?? 1.0;
+                var isMuted = trackVm?.IsMuted ?? false;
+
+                await Services.AudioService.PlayAudioAsync(block.AudioPath, block.Id.ToString(), 0, block.PlaybackSpeed, volume, isMuted);
+                System.Diagnostics.Debug.WriteLine($"[Audio] PlayAudioBlockAsync COMPLETED: Id={block.Id}, Volume={volume}, Muted={isMuted}");
             }
             finally
             {

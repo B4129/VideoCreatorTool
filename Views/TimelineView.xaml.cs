@@ -192,22 +192,46 @@ namespace VideoCreatorWPF.Views
                 return;
             }
 
-            // Handle drag move
+            // Handle drag move - move all selected blocks
             if (_isDragging && _selectedBlock != null && !_isResizing && e.LeftButton == MouseButtonState.Pressed)
             {
+                var selectedBlocks = GetSelectedBlocks();
                 var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
-                var newFrame = Math.Max(0, _dragStartFrame + framesDelta);
 
-                _dragTargetTrack = GetTrackFromYPosition(currentY, _dragSourceTrack);
-
-                if (timelineVm.IsSnapEnabled)
+                // If only one block selected, use _selectedBlock
+                if (selectedBlocks.Count <= 1)
                 {
-                    newFrame = ApplySnap(newFrame, _selectedBlock);
+                    var newFrame = Math.Max(0, _dragStartFrame + framesDelta);
+
+                    _dragTargetTrack = GetTrackFromYPosition(currentY, _dragSourceTrack);
+
+                    if (timelineVm.IsSnapEnabled)
+                    {
+                        newFrame = ApplySnap(newFrame, _selectedBlock);
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"[Drag] deltaX={deltaX}, framesDelta={framesDelta}, newFrame={newFrame}");
+
+                    _selectedBlock.StartFrame = newFrame;
+                }
+                else
+                {
+                    // Move all selected blocks together
+                    _dragTargetTrack = GetTrackFromYPosition(currentY, _dragSourceTrack);
+
+                    foreach (var block in selectedBlocks)
+                    {
+                        var newFrame = Math.Max(0, block.StartFrame + framesDelta);
+
+                        if (timelineVm.IsSnapEnabled)
+                        {
+                            newFrame = ApplySnap(newFrame, block);
+                        }
+
+                        block.StartFrame = newFrame;
+                    }
                 }
 
-                System.Diagnostics.Debug.WriteLine($"[Drag] deltaX={deltaX}, framesDelta={framesDelta}, newFrame={newFrame}");
-
-                _selectedBlock.StartFrame = newFrame;
                 UpdateDragDropFeedback(currentY);
             }
         }
@@ -507,15 +531,39 @@ namespace VideoCreatorWPF.Views
         }
 
         // Visual feedback for drag-drop
-        // NOTE: Visual feedback requires TracksPanel to be available in XAML
+        private ViewModels.TimelineTrackViewModel? _previousDragTargetTrack;
+
         private void UpdateDragDropFeedback(int currentY)
         {
-            // Currently placeholder - implement when track highlighting UI is added
+            if (_dragSourceTrack == null || DataContext is not ViewModels.TimelineViewModel timelineVm)
+                return;
+
+            var targetTrack = GetTrackFromYPosition(currentY, _dragSourceTrack);
+            if (targetTrack != null && targetTrack != _previousDragTargetTrack)
+            {
+                // Clear previous highlight
+                if (_previousDragTargetTrack != null)
+                {
+                    _previousDragTargetTrack.IsDragOver = false;
+                }
+
+                // Set new highlight
+                if (targetTrack != _dragSourceTrack)
+                {
+                    targetTrack.IsDragOver = true;
+                }
+
+                _previousDragTargetTrack = targetTrack;
+            }
         }
 
         private void ClearDragDropFeedback()
         {
-            // Currently placeholder - implement when track highlighting UI is added
+            if (_previousDragTargetTrack != null)
+            {
+                _previousDragTargetTrack.IsDragOver = false;
+                _previousDragTargetTrack = null;
+            }
         }
 
         private void DeleteSelectedBlocks(List<TimelineBlock> blocks, ViewModels.TimelineViewModel timelineVm)
@@ -550,16 +598,40 @@ namespace VideoCreatorWPF.Views
             Clipboard.Clear();
             foreach (var block in blocks)
             {
-                Clipboard.Add(new TimelineBlock
-                {
-                    CharacterId = block.CharacterId,
-                    StartFrame = block.StartFrame,
-                    Duration = block.Duration,
-                    Text = block.Text,
-                    BackgroundColor = block.BackgroundColor,
-                    Type = block.Type
-                });
+                Clipboard.Add(CloneBlock(block));
             }
+        }
+
+        private static TimelineBlock CloneBlock(TimelineBlock source)
+        {
+            return new TimelineBlock
+            {
+                CharacterId = source.CharacterId,
+                StartFrame = source.StartFrame,
+                Duration = source.Duration,
+                Text = source.Text,
+                BackgroundColor = source.BackgroundColor,
+                Type = source.Type,
+                AudioPath = source.AudioPath,
+                VideoPath = source.VideoPath,
+                IsVisible = source.IsVisible,
+                Volume = source.Volume,
+                PlaybackSpeed = source.PlaybackSpeed,
+                Opacity = source.Opacity,
+                FontFamily = source.FontFamily,
+                FontSize = source.FontSize,
+                TextColor = source.TextColor,
+                TextPositionX = source.TextPositionX,
+                TextPositionY = source.TextPositionY,
+                TextOutlineWidth = source.TextOutlineWidth,
+                TextOutlineColor = source.TextOutlineColor,
+                HasShadow = source.HasShadow,
+                FadeInFrames = source.FadeInFrames,
+                FadeOutFrames = source.FadeOutFrames,
+                AudioFadeInFrames = source.AudioFadeInFrames,
+                AudioFadeOutFrames = source.AudioFadeOutFrames,
+                Loop = source.Loop
+            };
         }
 
         private void PasteBlocks(ViewModels.TimelineViewModel timelineVm)
@@ -596,7 +668,7 @@ namespace VideoCreatorWPF.Views
         /// <summary>
         /// ブロックリサイズ時の処理。音声ブロックの場合、 stretched audio を生成
         /// </summary>
-        private async void HandleBlockResized(TimelineBlock block, int originalDuration)
+        private void HandleBlockResized(TimelineBlock block, int originalDuration)
         {
             if (block.Type == BlockType.Audio || block.Type == BlockType.Video)
             {
@@ -611,13 +683,21 @@ namespace VideoCreatorWPF.Views
                     {
                         System.Diagnostics.Debug.WriteLine($"[AudioStretch] Resizing audio: {block.AudioPath}, factor: {stretchFactor:F2}x");
 
+                        // 進捗表示用コールバック
+                        var progress = new Progress<int>(percent =>
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[AudioStretch] Progress: {percent}%");
+                            // TODO: UIに進捗を表示（オプション）
+                        });
+
                         // ffmpegを使用して音声ファイルを伸長
                         try
                         {
-                            var stretchedPath = await Services.AudioStretchService.StretchAsync(
+                            var stretchedPath = Services.AudioStretchService.Stretch(
                                 block.AudioPath,
                                 originalDuration,
-                                block.Duration
+                                block.Duration,
+                                progress
                             );
 
                             // 伸長後の音声ファイルパスを更新
@@ -786,7 +866,7 @@ namespace VideoCreatorWPF.Views
             // If audio already exists, play it
             if (!string.IsNullOrEmpty(block.AudioPath) && File.Exists(block.AudioPath))
             {
-                _ = Services.AudioService.PlayAudioAsync(block.AudioPath);
+                _ = Services.AudioService.PlayAudioAsync(block.AudioPath, block.Id.ToString());
                 return;
             }
 
@@ -822,7 +902,7 @@ namespace VideoCreatorWPF.Views
             if (audioPath != null)
             {
                 block.AudioPath = audioPath;
-                await Services.AudioService.PlayAudioAsync(audioPath);
+                await Services.AudioService.PlayAudioAsync(audioPath, block.Id.ToString());
             }
         }
 

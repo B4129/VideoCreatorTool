@@ -41,7 +41,11 @@ namespace VideoCreatorWPF.ViewModels
         public string? StandingImagePath
         {
             get => _standingImagePath;
-            set => SetProperty(ref _standingImagePath, value);
+            set
+            {
+                SetProperty(ref _standingImagePath, value);
+                OnPropertyChanged(nameof(HasStandingImage));
+            }
         }
 
         /// <summary>
@@ -52,6 +56,11 @@ namespace VideoCreatorWPF.ViewModels
             get => _emotionEffectPath;
             set => SetProperty(ref _emotionEffectPath, value);
         }
+
+        /// <summary>
+        /// 立ち絵画像が存在するか
+        /// </summary>
+        public bool HasStandingImage => !string.IsNullOrEmpty(_standingImagePath);
 
         /// <summary>
         /// プレイヘッド位置にある動画ブロックのパスを取得
@@ -72,7 +81,7 @@ namespace VideoCreatorWPF.ViewModels
         }
 
         /// <summary>
-        /// プレイヘッド位置にある全てのテキストブロック（音声・動画ブロックは除外）
+        /// プレイヘッド位置にある全てのテキストブロック（DialogueとSubtitleを含む）
         /// </summary>
         public IEnumerable<TimelineBlock> CurrentTextBlocks
         {
@@ -82,10 +91,34 @@ namespace VideoCreatorWPF.ViewModels
                 {
                     foreach (var block in track.Items)
                     {
-                        // Dialogue blocks only (skip audio, video, and other block types)
-                        if (block.Type != BlockType.Dialogue) continue;
+                        // Dialogue and Subtitle blocks
+                        if (block.Type != BlockType.Dialogue && block.Type != BlockType.Subtitle) continue;
 
                         // プレイヘッド位置にテキストがあるかチェック
+                        if (_currentFrame >= block.StartFrame && _currentFrame < block.StartFrame + block.Duration)
+                        {
+                            yield return block;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// プレイヘッド位置にある全ての画像ブロック
+        /// </summary>
+        public IEnumerable<TimelineBlock> CurrentImageBlocks
+        {
+            get
+            {
+                foreach (var track in _project.Tracks)
+                {
+                    foreach (var block in track.Items)
+                    {
+                        // Image blocks only
+                        if (block.Type != BlockType.Image) continue;
+
+                        // プレイヘッド位置に画像があるかチェック
                         if (_currentFrame >= block.StartFrame && _currentFrame < block.StartFrame + block.Duration)
                         {
                             yield return block;
@@ -380,78 +413,71 @@ namespace VideoCreatorWPF.ViewModels
         }
 
         /// <summary>
-        /// 指定フレームのプレビュー画像を生成（ffmpeg使用）
+        /// 指定フレームのプレビュー画像を生成（FFMpegCore使用）
         /// </summary>
         public async System.Threading.Tasks.Task GeneratePreviewFrame(int frame)
         {
             CurrentFrame = frame;
 
-            // ffmpegで指定フレームの画像を生成
-            var ffmpegPath = FindFfmpeg();
-            if (ffmpegPath == null)
-            {
-                CurrentText = $"Frame {frame} (ffmpeg not found)";
-                return;
-            }
-
             // 現在のフレームに対応するタイムスタンプを計算
             var frameRate = _project.FrameRate;
             var timestamp = frame / frameRate;
             var ts = TimeSpan.FromSeconds(timestamp);
-            var tsStr = $"{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}.{ts.Milliseconds:D3}";
 
             // 一時ファイルに出力
             var tempFile = Path.GetTempFileName() + ".png";
 
             try
             {
-                // ffmpegコマンド: ffmpeg -ss <timestamp> -i video.mp4 -vframes 1 -y output.png
-                // 注意: 実際のプロジェクトではエクスポート前の動画を生成する必要がある
-                // 暫定実装として黒背景にフレーム番号を表示
+                // タイムライン上の最初の動画ブロックを探す
+                var firstVideoBlock = _project.Tracks
+                    .SelectMany(t => t.Items)
+                    .FirstOrDefault(b => b.Type == Models.BlockType.Video &&
+                                         frame >= b.StartFrame &&
+                                         frame < b.StartFrame + b.Duration);
 
-                var width = _project.Width;
-                var height = _project.Height;
-
-                // 簡易プレビュー：黒背景にテキスト
-                var drawingVisual = new DrawingVisual();
-                using (var drawingContext = drawingVisual.RenderOpen())
+                if (firstVideoBlock != null && !string.IsNullOrEmpty(firstVideoBlock.VideoPath)
+                    && File.Exists(firstVideoBlock.VideoPath))
                 {
-                    drawingContext.DrawRectangle(System.Windows.Media.Brushes.Black, null,
-                        new System.Windows.Rect(0, 0, width, height));
+                    // FFMpegCoreを使って指定フレームを抽出
+                    var blockFrame = frame - firstVideoBlock.StartFrame;
+                    var blockTimestamp = blockFrame / frameRate;
+                    var blockTs = TimeSpan.FromSeconds(blockTimestamp);
 
-                    var text = new FormattedText(
-                        $"Frame {frame}",
-                        System.Globalization.CultureInfo.CurrentCulture,
-                        System.Windows.FlowDirection.LeftToRight,
-                        new Typeface("Yu Gothic UI"),
-                        48,
-                        System.Windows.Media.Brushes.White);
+                    Debug.WriteLine($"[Preview] Extracting frame {blockFrame} from {firstVideoBlock.VideoPath}");
 
-                    var x = (width - text.Width) / 2;
-                    var y = (height - text.Height) / 2;
-                    drawingContext.DrawText(text, new System.Windows.Point(x, y));
+                    // FFMpegCoreでフレームを抽出
+                    var success = await FFMpegCore.FFMpegArguments
+                        .FromFileInput(firstVideoBlock.VideoPath)
+                        .OutputToFile(tempFile, overwrite: true, options => options
+                            .ForceFormat("image2")
+                            .WithCustomArgument($"-ss {blockTs.ToString(@"hh\:mm\:ss\.fff")} -vframes 1 -q:v 2"))
+                        .ProcessAsynchronously();
+
+                    if (success && File.Exists(tempFile))
+                    {
+                        // 画像読み込み
+                        var bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.UriSource = new Uri(tempFile);
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.EndInit();
+
+                        PreviewImage = bitmap;
+                        CurrentText = $"Frame {frame} - {Path.GetFileName(firstVideoBlock.VideoPath)}";
+                    }
+                    else
+                    {
+                        // FFMpegCore失敗時はfallback
+                        Debug.WriteLine("[Preview] FFMpegCore failed, using fallback");
+                        await GenerateFallbackPreview(frame);
+                    }
                 }
-
-                var renderTarget = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
-                renderTarget.Render(drawingVisual);
-
-                var encoder = new PngBitmapEncoder();
-                encoder.Frames.Add(BitmapFrame.Create(renderTarget));
-
-                using (var fileStream = new FileStream(tempFile, FileMode.Create))
+                else
                 {
-                    encoder.Save(fileStream);
+                    // 動画ブロックがない場合はfallback
+                    await GenerateFallbackPreview(frame);
                 }
-
-                // 画像読み込み
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(tempFile);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-
-                PreviewImage = bitmap;
-                CurrentText = $"Frame {frame} / {_project.Tracks.Sum(t => t.Items.Count)} blocks";
 
                 File.Delete(tempFile);
             }
@@ -459,37 +485,61 @@ namespace VideoCreatorWPF.ViewModels
             {
                 Debug.WriteLine($"プレビュー生成エラー: {ex.Message}");
                 if (File.Exists(tempFile)) File.Delete(tempFile);
+                await GenerateFallbackPreview(frame);
             }
         }
 
         /// <summary>
-        /// ffmpeg.exeを検索
+        /// フォールバック用プレビュー画像生成
         /// </summary>
-        private static string? FindFfmpeg()
+        private async System.Threading.Tasks.Task GenerateFallbackPreview(int frame)
         {
-            var paths = new[]
-            {
-                "ffmpeg.exe",
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "ffmpeg", "bin", "ffmpeg.exe"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "ffmpeg", "bin", "ffmpeg.exe"),
-            };
+            var width = _project.Width;
+            var height = _project.Height;
 
-            foreach (var path in paths)
+            // 簡易プレビュー：黒背景にテキスト
+            var drawingVisual = new DrawingVisual();
+            using (var drawingContext = drawingVisual.RenderOpen())
             {
-                if (File.Exists(path)) return path;
+                drawingContext.DrawRectangle(System.Windows.Media.Brushes.Black, null,
+                    new System.Windows.Rect(0, 0, width, height));
+
+                var text = new FormattedText(
+                    $"Frame {frame}",
+                    System.Globalization.CultureInfo.CurrentCulture,
+                    System.Windows.FlowDirection.LeftToRight,
+                    new Typeface("Yu Gothic UI"),
+                    48,
+                    System.Windows.Media.Brushes.White);
+
+                var x = (width - text.Width) / 2;
+                var y = (height - text.Height) / 2;
+                drawingContext.DrawText(text, new System.Windows.Point(x, y));
             }
 
-            var pathEnv = Environment.GetEnvironmentVariable("PATH");
-            if (pathEnv != null)
+            var renderTarget = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            renderTarget.Render(drawingVisual);
+
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(renderTarget));
+
+            var tempFile = Path.GetTempFileName() + ".png";
+            using (var fileStream = new FileStream(tempFile, FileMode.Create))
             {
-                foreach (var dir in pathEnv.Split(';'))
-                {
-                    var ffmpegPath = Path.Combine(dir, "ffmpeg.exe");
-                    if (File.Exists(ffmpegPath)) return ffmpegPath;
-                }
+                encoder.Save(fileStream);
             }
 
-            return null;
+            // 画像読み込み
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(tempFile);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+
+            PreviewImage = bitmap;
+            CurrentText = $"Frame {frame} / {_project.Tracks.Sum(t => t.Items.Count)} blocks";
+
+            File.Delete(tempFile);
         }
 
         public void SetMediaElementSource(System.Windows.Controls.MediaElement mediaElement, string videoPath)

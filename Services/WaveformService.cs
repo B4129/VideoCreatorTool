@@ -23,9 +23,9 @@ namespace VideoCreatorWPF.Services
 
         /// <summary>
         /// 音声ファイルから波形データを生成（WAV/MP3/OGG/M4A対応）
-        /// ffmpegを使用してあらゆるオーディオ形式を解析
+        /// FFMpegCoreを使用してあらゆるオーディオ形式を解析
         /// </summary>
-        public static WaveformData? GenerateWaveform(string audioPath, int sampleCount = 100)
+        public static async Task<WaveformData?> GenerateWaveform(string audioPath, int sampleCount = 100)
         {
             try
             {
@@ -44,8 +44,8 @@ namespace VideoCreatorWPF.Services
                     if (wavData != null) return wavData;
                 }
 
-                // MP3/OGG/M4Aなどの場合はffmpegを使用して解析
-                return GenerateWaveformViaFfmpeg(audioPath, sampleCount);
+                // MP3/OGG/M4Aなどの場合はFFMpegCoreを使用して解析
+                return await GenerateWaveformViaFfmpeg(audioPath, sampleCount);
             }
             catch (Exception ex)
             {
@@ -55,73 +55,41 @@ namespace VideoCreatorWPF.Services
         }
 
         /// <summary>
-        /// ffmpegを使用して任意のオーディオ形式から波形データを抽出
+        /// FFMpegCoreを使用して任意のオーディオ形式から波形データを抽出
         /// </summary>
-        private static WaveformData? GenerateWaveformViaFfmpeg(string audioPath, int sampleCount)
+        private static async Task<WaveformData?> GenerateWaveformViaFfmpeg(string audioPath, int sampleCount)
         {
             try
             {
-                var ffmpegPath = FindFfmpeg();
-                if (ffmpegPath == null)
-                {
-                    Debug.WriteLine("ffmpeg not found, generating placeholder");
-                    return GeneratePlaceholderWaveform(sampleCount);
-                }
+                Debug.WriteLine($"[Waveform] Extracting waveform from: {audioPath}");
 
-                // 一時ファイル出力を使用（パイプより安定）
+                // 一時ファイル出力を使用
                 var tempFile = Path.GetTempFileName() + ".raw";
+
                 try
                 {
-                    // ffmpegで raw PCM (f32le) として抽出
-                    // コマンド: ffmpeg -i input.mp3 -f f32le -ac 1 -ar 8000 output.raw
-                    var args = $"-i \"{audioPath}\" -f f32le -acodec pcm_f32le -ac 1 -ar 8000 -y \"{tempFile}\"";
+                    Debug.WriteLine($"[Waveform] Using FFMpegCore to extract PCM data");
 
-                    var startInfo = new ProcessStartInfo
-                    {
-                        FileName = ffmpegPath,
-                        Arguments = args,
-                        UseShellExecute = false,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    };
+                    // FFMpegCoreでRaw PCMを抽出（8kHz, mono, float32）
+                    var success = await FFMpegCore.FFMpegArguments
+                        .FromFileInput(audioPath)
+                        .OutputToFile(tempFile, overwrite: true, options => options
+                            .ForceFormat("f32le")
+                            .WithCustomArgument($"-acodec pcm_f32le -ac 1 -ar 8000"))
+                        .ProcessAsynchronously();
 
-                    using var process = Process.Start(startInfo);
-                    if (process == null)
+                    if (!success || !File.Exists(tempFile))
                     {
-                        File.Delete(tempFile);
-                        return GeneratePlaceholderWaveform(sampleCount);
-                    }
-
-                    // エラー出力を読み飛ばす（出力しないとストールする）
-                    var errorTask = Task.Run(async () =>
-                    {
-                        await process.StandardError.ReadToEndAsync();
-                    });
-
-                    try
-                    {
-                        process.WaitForExit();
-                        errorTask.Wait();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.WriteLine($"ffmpeg execution error: {ex.Message}");
-                        File.Delete(tempFile);
-                        return GeneratePlaceholderWaveform(sampleCount);
-                    }
-
-                    if (!File.Exists(tempFile) || process.ExitCode != 0)
-                    {
-                        File.Delete(tempFile);
+                        Debug.WriteLine("[Waveform] FFMpegCore extraction failed");
                         return GeneratePlaceholderWaveform(sampleCount);
                     }
 
                     // Raw PCMデータ読み込み
-                    var rawData = File.ReadAllBytes(tempFile);
+                    var rawData = await File.ReadAllBytesAsync(tempFile);
 
                     if (rawData.Length == 0)
                     {
-                        File.Delete(tempFile);
+                        Debug.WriteLine("[Waveform] No PCM data extracted");
                         return GeneratePlaceholderWaveform(sampleCount);
                     }
 
@@ -136,7 +104,7 @@ namespace VideoCreatorWPF.Services
                         }
                     }
 
-                    File.Delete(tempFile);
+                    Debug.WriteLine($"[Waveform] Extracted {floatSamples.Count} samples");
 
                     if (floatSamples.Count == 0)
                     {
@@ -156,7 +124,7 @@ namespace VideoCreatorWPF.Services
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"ffmpeg waveform extraction error: {ex.Message}");
+                Debug.WriteLine($"FFMpegCore waveform extraction error: {ex.Message}");
                 return GeneratePlaceholderWaveform(sampleCount);
             }
         }
@@ -194,38 +162,6 @@ namespace VideoCreatorWPF.Services
             data.RMS = (float)Math.Sqrt(sumSquares / data.Samples.Count);
 
             return data;
-        }
-
-        /// <summary>
-        /// ffmpeg.exeを検索
-        /// </summary>
-        private static string? FindFfmpeg()
-        {
-            // Check common locations
-            var paths = new[]
-            {
-                "ffmpeg.exe",
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "ffmpeg", "bin", "ffmpeg.exe"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "ffmpeg", "bin", "ffmpeg.exe"),
-            };
-
-            foreach (var path in paths)
-            {
-                if (File.Exists(path)) return path;
-            }
-
-            // Check PATH
-            var pathEnv = Environment.GetEnvironmentVariable("PATH");
-            if (pathEnv != null)
-            {
-                foreach (var dir in pathEnv.Split(';'))
-                {
-                    var ffmpegPath = Path.Combine(dir, "ffmpeg.exe");
-                    if (File.Exists(ffmpegPath)) return ffmpegPath;
-                }
-            }
-
-            return null;
         }
 
         private static WaveformData ParseWavFile(string audioPath, int sampleCount)

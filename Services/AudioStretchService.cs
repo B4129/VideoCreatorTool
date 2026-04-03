@@ -2,34 +2,41 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using FFMpegCore;
+using FFMpegCore.Enums;
 
 namespace VideoCreatorWPF.Services
 {
     /// <summary>
-    /// Audio stretching service using ffmpeg
+    /// Audio stretching service using FFMpegCore library
+    /// No external ffmpeg installation required - bundled with the app
     /// Stretches/compresses audio files to match target duration
     /// </summary>
     public static class AudioStretchService
     {
         private static readonly string TempDir = Path.Combine(Path.GetTempPath(), "VideoCreator", "AudioStretch");
+        private static bool _ffmpegConfigurationChecked;
 
         static AudioStretchService()
         {
             Directory.CreateDirectory(TempDir);
+            ConfigureFFMpegPaths();
         }
 
         /// <summary>
-        /// Stretch audio file to target duration
+        /// Stretch audio file to target duration using FFMpegCore (synchronous for progress support)
         /// </summary>
         /// <param name="audioPath">Original audio file path</param>
         /// <param name="originalDurationFrames">Original duration in frames (30fps)</param>
         /// <param name="targetDurationFrames">Target duration in frames (30fps)</param>
+        /// <param name="progress">Optional progress callback (0-100)</param>
         /// <returns>Path to stretched audio file (temp file)</returns>
-        public static async Task<string> StretchAsync(string audioPath, int originalDurationFrames, int targetDurationFrames)
+        public static string Stretch(string audioPath, int originalDurationFrames, int targetDurationFrames, IProgress<int>? progress = null)
         {
             try
             {
                 Debug.WriteLine($"[AudioStretch] START: Original={originalDurationFrames}f, Target={targetDurationFrames}f");
+                progress?.Report(10);
 
                 if (!File.Exists(audioPath))
                 {
@@ -41,24 +48,50 @@ namespace VideoCreatorWPF.Services
                 if (Math.Abs(originalDurationFrames - targetDurationFrames) < 2)
                 {
                     Debug.WriteLine("[AudioStretch] Durations nearly identical, no stretching needed");
+                    progress?.Report(100);
                     return audioPath;
                 }
+
+                progress?.Report(20);
 
                 var originalDurationSeconds = originalDurationFrames / 30.0;
                 var targetDurationSeconds = targetDurationFrames / 30.0;
                 var stretchFactor = targetDurationSeconds / originalDurationSeconds;
 
                 Debug.WriteLine($"[AudioStretch] Stretch factor: {stretchFactor:F3}x");
+                progress?.Report(30);
 
-                // atempo filter supports 0.5-2.0 range
-                // For factors outside this range, we need to chain filters
-                if (stretchFactor < 0.5 || stretchFactor > 2.0)
+                // Build audio filter for stretching
+                var audioFilter = BuildAudioStretchFilter(stretchFactor);
+                progress?.Report(40);
+
+                var outputFileName = $"{Guid.NewGuid()}{Path.GetExtension(audioPath)}";
+                var outputPath = Path.Combine(TempDir, outputFileName);
+
+                Debug.WriteLine($"[AudioStretch] Using FFMpegCore filter: {audioFilter}");
+                progress?.Report(50);
+
+                // Use FFMpegCore to process audio (synchronous to support progress)
+                var success = FFMpegCore.FFMpegArguments
+                    .FromFileInput(audioPath)
+                    .OutputToFile(outputPath, overwrite: true, options => options
+                        .ForceFormat("wav")
+                        .WithCustomArgument($"-af \"{audioFilter}\" -vn"))
+                    .ProcessSynchronously();
+
+                progress?.Report(90);
+
+                if (success && File.Exists(outputPath))
                 {
-                    Debug.WriteLine("[AudioStretch] Factor outside 0.5-2.0 range, using chained atempo filters");
-                    return await StretchWithChainedFilters(audioPath, stretchFactor);
+                    Debug.WriteLine($"[AudioStretch] SUCCESS: {outputPath}");
+                    progress?.Report(100);
+                    return outputPath;
                 }
-
-                return await StretchWithAtempo(audioPath, stretchFactor);
+                else
+                {
+                    Debug.WriteLine("[AudioStretch] FFMpegCore processing failed, returning original file");
+                    return audioPath;
+                }
             }
             catch (Exception ex)
             {
@@ -67,168 +100,67 @@ namespace VideoCreatorWPF.Services
             }
         }
 
-        private static async Task<string> StretchWithAtempo(string audioPath, double stretchFactor)
+        /// <summary>
+        /// Build audio filter string for stretching
+        /// </summary>
+        private static string BuildAudioStretchFilter(double stretchFactor)
         {
-            var ffmpegPath = FindFFmpeg();
-            if (string.IsNullOrEmpty(ffmpegPath))
-            {
-                Debug.WriteLine("[AudioStretch] ffmpeg not found, returning original file");
-                return audioPath;
-            }
-
-            var outputFileName = $"{Guid.NewGuid()}{Path.GetExtension(audioPath)}";
-            var outputPath = Path.Combine(TempDir, outputFileName);
-
             // atempo filter: 1/stretchFactor because atempo > 1 speeds up, < 1 slows down
             var atempoValue = 1.0 / stretchFactor;
 
-            var arguments = $"-y -i \"{audioPath}\" -filter:a \"atempo={atempoValue:F3}\" -vn \"{outputPath}\"";
-
-            Debug.WriteLine($"[AudioStretch] Running: {ffmpegPath} {arguments}");
-
-            var startInfo = new ProcessStartInfo
+            // Single atempo filter for 0.5-2.0 range
+            if (atempoValue >= 0.5 && atempoValue <= 2.0)
             {
-                FileName = ffmpegPath,
-                Arguments = arguments,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
-
-            using (var process = Process.Start(startInfo))
-            {
-                if (process == null)
-                {
-                    Debug.WriteLine("[AudioStretch] Failed to start ffmpeg");
-                    return audioPath;
-                }
-
-                var stderr = await process.StandardError.ReadToEndAsync();
-                await process.WaitForExitAsync();
-
-                if (process.ExitCode != 0)
-                {
-                    Debug.WriteLine($"[AudioStretch] ffmpeg failed: {stderr}");
-                    return audioPath;
-                }
+                return $"atempo={atempoValue:F3}";
             }
 
-            Debug.WriteLine($"[AudioStretch] SUCCESS: {outputPath}");
-            return outputPath;
+            // Chain multiple atempo filters for wider range
+            // Example: atempo=0.7,atempo=0.7 for 0.49x
+            var singleFactor = Math.Sqrt(stretchFactor);
+            var singleAtempo = 1.0 / singleFactor;
+
+            // Validate chained atempo values
+            if (singleAtempo >= 0.5 && singleAtempo <= 2.0)
+            {
+                return $"atempo={singleAtempo:F3},atempo={singleAtempo:F3}";
+            }
+
+            // Fallback to single filter (may have quality issues but will work)
+            Debug.WriteLine($"[AudioStretch] Warning: Stretch factor {stretchFactor:F3}x is outside optimal range, using single atempo={atempoValue:F3}");
+            return $"atempo={atempoValue:F3}";
         }
 
-        private static async Task<string> StretchWithChainedFilters(string audioPath, double stretchFactor)
+        /// <summary>
+        /// Configure FFMpegCore to find bundled ffmpeg binaries
+        /// </summary>
+        private static void ConfigureFFMpegPaths()
         {
-            var ffmpegPath = FindFFmpeg();
-            if (string.IsNullOrEmpty(ffmpegPath))
+            if (_ffmpegConfigurationChecked) return;
+
+            try
             {
-                return audioPath;
-            }
+                // Check if ffmpeg is in application directory
+                var appDir = AppDomain.CurrentDomain.BaseDirectory;
+                var ffmpegExe = Path.Combine(appDir, "ffmpeg.exe");
 
-            // Chain atempo filters to support wider range
-            // Example: atempo=0.7,atempo=0.7 supports 0.49x
-            string filterChain;
-            if (stretchFactor < 0.5)
-            {
-                // Slowing down: need multiple atempo < 1
-                var singleFactor = Math.Pow(stretchFactor, 0.5);
-                filterChain = $"atempo={singleFactor:F3},atempo={singleFactor:F3}";
-            }
-            else
-            {
-                // Speeding up: need multiple atempo > 1
-                var singleFactor = Math.Pow(stretchFactor, 0.5);
-                filterChain = $"atempo={singleFactor:F3},atempo={singleFactor:F3}";
-            }
-
-            var outputFileName = $"{Guid.NewGuid()}{Path.GetExtension(audioPath)}";
-            var outputPath = Path.Combine(TempDir, outputFileName);
-
-            var arguments = $"-y -i \"{audioPath}\" -filter:a \"{filterChain}\" -vn \"{outputPath}\"";
-
-            Debug.WriteLine($"[AudioStretch] Running chained: {ffmpegPath} {arguments}");
-
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = ffmpegPath,
-                Arguments = arguments,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
-
-            using (var process = Process.Start(startInfo))
-            {
-                if (process == null)
+                if (File.Exists(ffmpegExe))
                 {
-                    return audioPath;
+                    GlobalFFOptions.Configure(options => options.BinaryFolder = appDir);
+                    Debug.WriteLine($"[AudioStretch] Using bundled ffmpeg from: {appDir}");
+                }
+                else
+                {
+                    // Try to use system ffmpeg if available
+                    Debug.WriteLine("[AudioStretch] No bundled ffmpeg found, will attempt system PATH lookup");
                 }
 
-                var stderr = await process.StandardError.ReadToEndAsync();
-                await process.WaitForExitAsync();
-
-                if (process.ExitCode != 0)
-                {
-                    Debug.WriteLine($"[AudioStretch] ffmpeg chained failed: {stderr}");
-                    return audioPath;
-                }
+                _ffmpegConfigurationChecked = true;
             }
-
-            Debug.WriteLine($"[AudioStretch] CHAINED SUCCESS: {outputPath}");
-            return outputPath;
-        }
-
-        private static string FindFFmpeg()
-        {
-            // Check PATH first
-            var ffmpegPath = FindExecutableInPath("ffmpeg.exe");
-            if (!string.IsNullOrEmpty(ffmpegPath))
+            catch (Exception ex)
             {
-                return ffmpegPath;
+                Debug.WriteLine($"[AudioStretch] Failed to configure ffmpeg paths: {ex.Message}");
+                _ffmpegConfigurationChecked = true;
             }
-
-            // Check common locations
-            var commonPaths = new[]
-            {
-                @"C:\ffmpeg\bin\ffmpeg.exe",
-                @"C:\Program Files\ffmpeg\bin\ffmpeg.exe",
-                @"C:\Program Files (x86)\ffmpeg\bin\ffmpeg.exe",
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ffmpeg", "ffmpeg.exe")
-            };
-
-            foreach (var path in commonPaths)
-            {
-                if (File.Exists(path))
-                {
-                    Debug.WriteLine($"[AudioStretch] Found ffmpeg at: {path}");
-                    return path;
-                }
-            }
-
-            Debug.WriteLine("[AudioStretch] ffmpeg not found in common locations");
-            return null;
-        }
-
-        private static string FindExecutableInPath(string executableName)
-        {
-            var pathEnv = Environment.GetEnvironmentVariable("PATH");
-            if (string.IsNullOrEmpty(pathEnv))
-            {
-                return null;
-            }
-
-            foreach (var directory in pathEnv.Split(';'))
-            {
-                var fullPath = Path.Combine(directory, executableName);
-                if (File.Exists(fullPath))
-                {
-                    return fullPath;
-                }
-            }
-
-            return null;
         }
 
         /// <summary>

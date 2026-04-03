@@ -297,6 +297,11 @@
                                                                 <DataTrigger Binding="{Binding IsEnabled}" Value="False">
                                                                     <Setter Property="Background" Value="#666666"/>
                                                                 </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsDragOver}" Value="True">
+                                                                    <Setter Property="Background" Value="#4a4a2a"/>
+                                                                    <Setter Property="BorderBrush" Value="#ffff00"/>
+                                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                                </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Border.Style>

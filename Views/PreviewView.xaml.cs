@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace VideoCreatorWPF.Views
 {
@@ -305,6 +306,13 @@ namespace VideoCreatorWPF.Views
         // プレビュー更新用
         private string? _lastVideoPath;
 
+        // Text dragging support
+        private bool _isDraggingText = false;
+        private Models.TimelineBlock? _draggingTextBlock = null;
+        private Point _dragStartPoint;
+        private double _dragStartTextX;
+        private double _dragStartTextY;
+
         private void PreviewGrid_Drop(object sender, DragEventArgs e)
         {
             if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
@@ -502,5 +510,65 @@ namespace VideoCreatorWPF.Views
                 }
             }
         }
+
+        #region Text Position Dragging
+
+        private void TextOverlayBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // Get the current text block at the mouse position
+            if (DataContext is ViewModels.PreviewViewModel vm && vm.CurrentTextBlocks.Any())
+            {
+                // Start dragging with the first text block
+                _draggingTextBlock = vm.CurrentTextBlocks.First();
+                _isDraggingText = true;
+                _dragStartPoint = e.GetPosition(TextOverlayBorder);
+                _dragStartTextX = _draggingTextBlock.TextPositionX;
+                _dragStartTextY = _draggingTextBlock.TextPositionY;
+
+                TextOverlayBorder.CaptureMouse();
+                e.Handled = true;
+            }
+        }
+
+        private void TextOverlayBorder_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isDraggingText || _draggingTextBlock == null || !TextOverlayBorder.IsMouseCaptured)
+                return;
+
+            var currentPoint = e.GetPosition(TextOverlayBorder);
+            var deltaX = currentPoint.X - _dragStartPoint.X;
+            var deltaY = currentPoint.Y - _dragStartPoint.Y;
+
+            // Get container size
+            var containerWidth = TextOverlayBorder.ActualWidth;
+            var containerHeight = TextOverlayBorder.ActualHeight;
+
+            if (containerWidth <= 0 || containerHeight <= 0)
+                return;
+
+            // Convert pixel delta to percentage delta
+            var percentageDeltaX = (deltaX / containerWidth) * 100.0;
+            var percentageDeltaY = (deltaY / containerHeight) * 100.0;
+
+            // Update text position (clamped to 0-100 range)
+            var newX = Math.Max(0, Math.Min(100, _dragStartTextX + percentageDeltaX));
+            var newY = Math.Max(0, Math.Min(100, _dragStartTextY + percentageDeltaY));
+
+            _draggingTextBlock.TextPositionX = newX;
+            _draggingTextBlock.TextPositionY = newY;
+        }
+
+        private void TextOverlayBorder_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isDraggingText)
+            {
+                _isDraggingText = false;
+                _draggingTextBlock = null;
+                TextOverlayBorder.ReleaseMouseCapture();
+                e.Handled = true;
+            }
+        }
+
+        #endregion
     }
 }

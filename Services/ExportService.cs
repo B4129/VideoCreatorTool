@@ -19,24 +19,13 @@ namespace VideoCreatorWPF.Services
         {
             try
             {
-                // Check if ffmpeg is available
-                var ffmpegPath = FindFfmpeg();
-                if (ffmpegPath == null)
-                {
-                    // ffmpeg not found, create placeholder
-                    Debug.WriteLine("ffmpeg not found, creating placeholder");
-                    File.WriteAllText(outputPath, "Exported video placeholder - ffmpeg not found");
-                    progress?.Report(100);
-                    return true;
-                }
-
                 var exportWidth = width ?? project.Width;
                 var exportHeight = height ?? project.Height;
                 var exportFrameRate = frameRate ?? (int)project.FrameRate;
                 var exportEndFrame = endFrame ?? GetMaxFrame(project);
 
-                // Build and execute ffmpeg command
-                return await ExportWithFfmpeg(project, outputPath, ffmpegPath, progress,
+                // Build and execute ffmpeg command using FFMpegCore
+                return await ExportWithFfmpegCore(project, outputPath, progress,
                     exportWidth, exportHeight, exportFrameRate, videoBitrate,
                     startFrame, exportEndFrame, cancellationToken);
             }
@@ -47,7 +36,7 @@ namespace VideoCreatorWPF.Services
             }
         }
 
-        private static async Task<bool> ExportWithFfmpeg(VideoProject project, string outputPath, string ffmpegPath,
+        private static async Task<bool> ExportWithFfmpegCore(VideoProject project, string outputPath,
             IProgress<int>? progress, int width, int height, int frameRate, int videoBitrate,
             int startFrame, int endFrame, CancellationToken cancellationToken)
         {
@@ -62,74 +51,152 @@ namespace VideoCreatorWPF.Services
             var filterGraph = BuildVideoFilterGraph(project, width, height, frameRate, startFrame, endFrame, videoInputs);
             var audioFilterGraph = BuildAudioFilterGraph(project, startFrame, endFrame, videoInputs);
 
-            // Build ffmpeg command
-            var args = new StringBuilder();
+            Debug.WriteLine($"[Export] Using FFMpegCore for export");
+            Debug.WriteLine($"[Export] Filter graph: {filterGraph}");
 
-            // Add video input files
+            var totalFrames = endFrame - startFrame;
+            var lastProgress = 0;
+
+            // ffmpegパスを取得
+            var ffmpegPath = FindFfmpeg();
+            if (string.IsNullOrEmpty(ffmpegPath))
+            {
+                Debug.WriteLine("ffmpeg not found, export will fail");
+                return false;
+            }
+
+            // Build input list
+            var inputList = new List<string>();
             foreach (var (videoPath, _) in videoInputs)
             {
-                args.Append($"-i \"{videoPath}\" ");
+                inputList.Add($"-i \"{videoPath}\"");
             }
-
-            // Add input files for audio blocks
             foreach (var audioFile in audioInputs)
             {
-                args.Append($"-i \"{audioFile}\" ");
+                inputList.Add($"-i \"{audioFile}\"");
             }
-
-            // Add BGM if exists
             if (!string.IsNullOrEmpty(project.BackgroundMusicPath) && File.Exists(project.BackgroundMusicPath))
             {
-                args.Append($"-i \"{project.BackgroundMusicPath}\" ");
+                inputList.Add($"-i \"{project.BackgroundMusicPath}\"");
+            }
+            inputList.Add($"-f lavfi -i \"{filterGraph}\"");
+
+            // Build complete command
+            var commandArgs = new StringBuilder();
+            foreach (var input in inputList)
+            {
+                commandArgs.Append($"{input} ");
             }
 
-            // Video filter graph (using lavfi for base generation)
-            args.Append($"-f lavfi -i \"{filterGraph}\" ");
-
             // Output settings
-            args.Append($"-r {frameRate} ");
-            args.Append($"-c:v libx264 -b:v {videoBitrate}k -pix_fmt yuv420p ");
+            commandArgs.Append($"-r {frameRate} ");
+            commandArgs.Append($"-c:v libx264 -b:v {videoBitrate}k -pix_fmt yuv420p ");
 
-            // Audio output if there are audio inputs (audio blocks + videos + BGM)
+            // Audio output if there are audio inputs
             var totalAudioInputs = audioInputs.Count + videoInputs.Count + (!string.IsNullOrEmpty(project.BackgroundMusicPath) ? 1 : 0);
             if (totalAudioInputs > 0)
             {
-                args.Append($"-c:a aac -b:a 192k ");
+                commandArgs.Append($"-c:a aac -b:a 192k ");
             }
 
-            args.Append($"-y -shortest \"{outputPath}\"");
+            commandArgs.Append($"-y -shortest \"{outputPath}\"");
 
-            Debug.WriteLine($"ffmpeg args: {args}");
+            Debug.WriteLine($"[Export] Command: {ffmpegPath} {commandArgs}");
 
             var startInfo = new ProcessStartInfo
             {
                 FileName = ffmpegPath,
-                Arguments = args.ToString(),
+                Arguments = commandArgs.ToString(),
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
 
-            using var process = Process.Start(startInfo);
-            if (process == null) return false;
+            using var process = new Process();
+            process.StartInfo = startInfo;
 
-            // Parse progress
-            var totalFrames = endFrame - startFrame;
-            _ = ParseFfmpegProgress(process, progress, totalFrames, cancellationToken);
+            // Parse progress from stderr and collect error messages
+            var regex = new Regex(@"frame=\s*(\d+)");
+            var errorOutput = new System.Text.StringBuilder();
+            var lastErrorOutput = string.Empty;
+
+            process.ErrorDataReceived += (sender, e) =>
+            {
+                if (e.Data != null)
+                {
+                    // Collect error output
+                    errorOutput.AppendLine(e.Data);
+                    lastErrorOutput = e.Data;
+
+                    // Parse progress
+                    if (progress != null)
+                    {
+                        var match = regex.Match(e.Data);
+                        if (match.Success)
+                        {
+                            var currentFrame = int.Parse(match.Groups[1].Value);
+                            var percent = Math.Min(100, (int)((double)currentFrame / totalFrames * 100));
+                            if (percent != lastProgress)
+                            {
+                                progress.Report(percent);
+                                lastProgress = percent;
+                            }
+                        }
+                    }
+                }
+            };
+
+            process.OutputDataReceived += (sender, e) => { };
+
+            process.Start();
+            process.BeginErrorReadLine();
+            process.BeginOutputReadLine();
 
             try
             {
                 await process.WaitForExitAsync(cancellationToken);
+
+                if (process.ExitCode == 0)
+                {
+                    progress?.Report(100);
+                    Debug.WriteLine("[Export] Export completed successfully");
+                    return true;
+                }
+                else
+                {
+                    var errorMsg = $"エクスポートに失敗しました（終了コード: {process.ExitCode}）\n\nffmpegエラー出力:\n{errorOutput.ToString()}";
+                    Debug.WriteLine($"[Export] Export failed:\n{errorMsg}");
+
+                    // Show error dialog to user
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        System.Windows.MessageBox.Show(errorMsg, "エクスポート失敗",
+                            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    });
+
+                    return false;
+                }
             }
             catch (OperationCanceledException)
             {
                 process.Kill();
+                await process.WaitForExitAsync();
                 throw;
             }
+            catch (Exception ex)
+            {
+                var errorMsg = $"エクスポート中にエラーが発生しました: {ex.Message}\n\nffmpegエラー出力:\n{errorOutput.ToString()}";
+                Debug.WriteLine($"[Export] Export exception: {errorMsg}");
 
-            progress?.Report(100);
-            return process.ExitCode == 0;
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    System.Windows.MessageBox.Show(errorMsg, "エクスポートエラー",
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                });
+
+                return false;
+            }
         }
 
         /// <summary>

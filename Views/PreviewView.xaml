@@ -10,6 +10,7 @@
         <ResourceDictionary>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
             <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibilityConverter"/>
+            <converters:PercentageToPixelConverter x:Key="PercentageToPixelConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
     <Border Background="Black" BorderBrush="#3f3f46" BorderThickness="1">
@@ -89,9 +90,27 @@
                     </Canvas>
                 </Canvas>
 
-                <!-- Subtitle overlay -->
-                <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
-                        Background="#80000000" Padding="10" Margin="20,0,20,20">
+                <!-- Standing image overlay (emotion character) -->
+                <Image x:Name="StandingImageOverlay" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                       Source="{Binding StandingImagePath}" Visibility="{Binding HasStandingImage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                <!-- Image blocks overlay -->
+                <ItemsControl ItemsSource="{Binding CurrentImageBlocks}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Image Source="{Binding AudioPath}" Stretch="Uniform"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Opacity="{Binding Opacity}"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Subtitle overlay with drag support -->
+                <Border x:Name="TextOverlayBorder" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                        Background="Transparent" Padding="0" Margin="0"
+                        MouseLeftButtonDown="TextOverlayBorder_MouseLeftButtonDown"
+                        MouseMove="TextOverlayBorder_MouseMove"
+                        MouseLeftButtonUp="TextOverlayBorder_MouseLeftButtonUp">
                     <ItemsControl ItemsSource="{Binding CurrentTextBlocks}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
@@ -99,7 +118,13 @@
                                            FontSize="{Binding FontSize}"
                                            FontFamily="{Binding FontFamily}"
                                            HorizontalAlignment="Center"
-                                           TextWrapping="Wrap"/>
+                                           TextWrapping="Wrap"
+                                           Cursor="SizeAll">
+                                    <TextBlock.RenderTransform>
+                                        <TranslateTransform X="{Binding TextPositionX, Converter={StaticResource PercentageToPixelConverter}, ConverterParameter={x:Reference PreviewGrid}}"
+                                                            Y="{Binding TextPositionY, Converter={StaticResource PercentageToPixelConverter}, ConverterParameter={x:Reference PreviewGrid}}"/>
+                                    </TextBlock.RenderTransform>
+                                </TextBlock>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

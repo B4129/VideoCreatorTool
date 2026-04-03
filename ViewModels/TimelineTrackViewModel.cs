@@ -18,6 +18,7 @@ namespace VideoCreatorWPF.ViewModels
         private bool _isMuted;
         private bool _isEditingName;
         private string _editingName = string.Empty;
+        private bool _isDragOver;
 
         public TimelineTrackViewModel(TimelineTrack track)
         {
@@ -111,6 +112,12 @@ namespace VideoCreatorWPF.ViewModels
         {
             get => _isMuted;
             set => SetProperty(ref _isMuted, value);
+        }
+
+        public bool IsDragOver
+        {
+            get => _isDragOver;
+            set => SetProperty(ref _isDragOver, value);
         }
 
         public ObservableCollection<TimelineBlock> Items => _track.Items;

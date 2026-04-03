@@ -147,7 +147,7 @@ namespace VideoCreatorWPF.Views
 
                 if (!string.IsNullOrEmpty(audioPath))
                 {
-                    AudioService.PlayAudioAsync(audioPath);
+                    AudioService.PlayAudioAsync(audioPath, $"preview_{Guid.NewGuid()}");
                 }
             }
             catch (Exception ex)
