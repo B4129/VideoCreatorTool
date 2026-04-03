@@ -31,6 +31,9 @@ namespace VideoCreatorWPF.ViewModels
             _tracks = new ObservableCollection<TimelineTrackViewModel>(
                 _project.Tracks.Select(t => new TimelineTrackViewModel(t)));
 
+            // Initialize grid lines
+            UpdateGridLines();
+
             // Subscribe to collection changes on each track
             foreach (var track in _tracks)
             {
@@ -192,9 +195,48 @@ namespace VideoCreatorWPF.ViewModels
             {
                 if (SetProperty(ref _pixelsPerFrame, value))
                 {
+                    UpdateGridLines();
                     // PixelsPerFrameが変更されたらTotalFramesも更新通知
                     OnPropertyChanged(nameof(TotalFrames));
+                    OnPropertyChanged(nameof(GridLines));
                 }
+            }
+        }
+
+        private ObservableCollection<GridLineItem> _gridLines;
+        public ObservableCollection<GridLineItem> GridLines
+        {
+            get
+            {
+                if (_gridLines == null)
+                {
+                    _gridLines = new ObservableCollection<GridLineItem>();
+                }
+                return _gridLines;
+            }
+        }
+
+        public void UpdateGridLines()
+        {
+            _gridLines?.Clear();
+            if (_gridLines == null) return;
+
+            var totalWidth = TotalFrames * PixelsPerFrame;
+            var pixelStep = 50.0; // 50ピクセル毎にグリッド線
+            var frameStep = pixelStep / PixelsPerFrame;
+
+            var currentX = 0.0;
+            var currentFrame = 0;
+
+            while (currentX < totalWidth)
+            {
+                _gridLines.Add(new GridLineItem
+                {
+                    X = currentX,
+                    Color = currentFrame % 30 == 0 ? "#555555" : "#444444"
+                });
+                currentX += pixelStep;
+                currentFrame += (int)frameStep;
             }
         }
 
@@ -229,6 +271,11 @@ namespace VideoCreatorWPF.ViewModels
                 // Add 5 seconds (150 frames at 30fps)
                 return lastEndFrame + (5 * 30);
             }
+        }
+
+        public void RefreshGridLines()
+        {
+            UpdateGridLines();
         }
 
         public void SetTotalFrames(int frames)
@@ -679,6 +726,24 @@ namespace VideoCreatorWPF.ViewModels
         public string Action { get; set; } = string.Empty;
         public object? Data { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.Now;
+    }
+
+    public class GridLineItem : ViewModelBase
+    {
+        private double _x;
+        private string _color;
+
+        public double X
+        {
+            get => _x;
+            set => SetProperty(ref _x, value);
+        }
+
+        public string Color
+        {
+            get => _color;
+            set => SetProperty(ref _color, value);
+        }
     }
 
     /// <summary>

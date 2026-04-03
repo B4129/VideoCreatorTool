@@ -160,14 +160,41 @@ namespace VideoCreatorWPF.Models
         public ObservableCollection<TimelineBlock> Blocks { get; set; } = new();
     }
 
-    public class TimelineBlock
+    public class TimelineBlock : INotifyPropertyChanged
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid CharacterId { get; set; }
         public int TrackIndex { get; set; }
         public Guid TrackId { get; set; }
-        public int StartFrame { get; set; }
-        public int Duration { get; set; }
+
+        private int _startFrame;
+        public int StartFrame
+        {
+            get => _startFrame;
+            set
+            {
+                if (_startFrame != value)
+                {
+                    _startFrame = value;
+                    OnPropertyChanged(nameof(StartFrame));
+                }
+            }
+        }
+
+        private int _duration;
+        public int Duration
+        {
+            get => _duration;
+            set
+            {
+                if (_duration != value)
+                {
+                    _duration = value;
+                    OnPropertyChanged(nameof(Duration));
+                }
+            }
+        }
+
         public string Text { get; set; } = string.Empty;
         public string? AudioPath { get; set; }
         public string? VideoPath { get; set; }
@@ -175,6 +202,13 @@ namespace VideoCreatorWPF.Models
         public string Name { get; set; } = "";
         public bool IsVisible { get; set; } = true;
         public BlockType Type { get; set; } = BlockType.Dialogue;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         // Text formatting properties
         private string _fontFamily = "MJoy";

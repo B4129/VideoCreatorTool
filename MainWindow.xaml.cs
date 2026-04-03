@@ -52,14 +52,23 @@ namespace VideoCreatorWPF
                             {
                                 try
                                 {
-                                    PreviewViewControl.VideoPlayer.BeginInit();
-                                    PreviewViewControl.VideoPlayer.Source = new Uri(args.VideoPath);
-                                    PreviewViewControl.VideoPlayer.LoadedBehavior = MediaState.Manual;
-                                    PreviewViewControl.VideoPlayer.EndInit();
+                                    Debug.WriteLine($"[MainWindow] Loading video: {args.VideoPath}, StartFrame={args.StartFrame}, Duration={args.Duration}");
 
-                                    // Seek to the correct position if needed
-                                    PreviewViewControl.VideoPlayer.Position = TimeSpan.Zero;
-                                    Debug.WriteLine($"[MainWindow] Video block started: {args.VideoPath}");
+                                    var player = PreviewViewControl.VideoPlayer;
+                                    player.LoadedBehavior = MediaState.Manual;
+                                    player.UnloadedBehavior = MediaState.Stop;
+                                    player.Source = new Uri(args.VideoPath);
+
+                                    // Wait for media to open, then play
+                                    player.MediaOpened += (sender, e) =>
+                                    {
+                                        Debug.WriteLine($"[MainWindow] Video opened, duration: {player.NaturalDuration.TimeSpan}");
+                                        player.Position = TimeSpan.Zero;
+                                        player.Play();
+                                        Debug.WriteLine($"[MainWindow] Video Play() called");
+                                    };
+
+                                    Debug.WriteLine($"[MainWindow] Video source set, waiting for MediaOpened");
                                 }
                                 catch (Exception ex)
                                 {
@@ -420,8 +429,8 @@ namespace VideoCreatorWPF
             var mainWindow = Application.Current.MainWindow?.DataContext as ViewModels.MainWindowViewModel;
             if (mainWindow?.CurrentProjectViewModel != null)
             {
-                // TODO: Get characters from actual project when implemented
-                return null;
+                var characters = mainWindow.CurrentProjectViewModel.Characters;
+                return characters.FirstOrDefault(c => c.Name == name);
             }
             return null;
         }
@@ -853,6 +862,18 @@ namespace VideoCreatorWPF
             public double Volume { get; set; }
             public bool IsMuted { get; set; }
             public List<JsonBlockData> Blocks { get; set; } = new();
+        }
+
+        private void SubtitleText_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.TextBox textBox)
+            {
+                // テキストの内容に基づいて高さを自動調整
+                var text = textBox.Text;
+                var lines = text.Split('\n').Length;
+                var newHeight = Math.Max(60, Math.Min(200, lines * 20 + 10));
+                textBox.Height = newHeight;
+            }
         }
 
         private class JsonBlockData

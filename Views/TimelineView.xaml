@@ -6,6 +6,7 @@
              xmlns:converters="clr-namespace:VideoCreatorWPF.Converters"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              mc:Ignorable="d" d:DesignWidth="1600" d:DesignHeight="320"
+             x:Name="TimelineViewControl"
              Focusable="True"
              KeyDown="TimelineView_KeyDown">
     <UserControl.Resources>
@@ -50,13 +51,6 @@
             <!-- Timeline toolbar -->
             <Border DockPanel.Dock="Top" Height="44" Background="#3c3c3c" BorderBrush="#555555" BorderThickness="0,0,0,1">
                 <StackPanel Orientation="Horizontal" Margin="10,0">
-                    <!-- Track add button -->
-                    <Button Content="+ トラック追加" Command="{Binding AddTrackCommand}"
-                            Width="110" Height="32" Margin="2,0" FontSize="12"
-                            Style="{StaticResource TimelineToolBarButtonStyle}"/>
-
-                    <TextBlock Text="|" Foreground="#555555" VerticalAlignment="Center" Margin="8,0"/>
-
                     <!-- Zoom controls -->
                     <TextBlock Text="ズーム:" Foreground="#cccccc" VerticalAlignment="Center" Margin="5,0,5,0" FontSize="12"/>
                     <Button Content="-" Command="{Binding ZoomOutCommand}"
@@ -80,32 +74,6 @@
                 </StackPanel>
             </Border>
 
-            <!-- Seek bar row -->
-            <Border DockPanel.Dock="Top" Height="36" Background="#2c2c2c" BorderBrush="#555555" BorderThickness="0,0,0,1">
-                <Grid Margin="10,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="220"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Left: spacer (aligned with track headers) -->
-                    <TextBlock Grid.Column="0" Text="シーク:" Foreground="#a1a1aa"
-                               VerticalAlignment="Center" Margin="10,0,0,0" FontSize="12"/>
-
-                    <!-- Right: seek bar (aligned with timeline) -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding CurrentPositionText}" Foreground="#a1a1aa"
-                                   VerticalAlignment="Center" Margin="0,0,5,0" Width="50" TextAlignment="Right"
-                                   FontWeight="Bold"/>
-                        <Slider x:Name="TimelineSeekSlider" Width="400" Height="22"
-                                Minimum="0" Maximum="{Binding TotalFrames}"
-                                Value="{Binding CurrentFrame, Mode=TwoWay}"
-                                TickFrequency="1" IsSnapToTickEnabled="False"/>
-                        <TextBlock Text="{Binding DurationText}" Foreground="#a1a1aa"
-                                   VerticalAlignment="Center" Margin="5,0,0,0" Width="50"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
 
             <!-- Main timeline area: Split into left (track headers) and right (timeline + ruler) -->
             <Grid>
@@ -134,13 +102,13 @@
 
                                             <!-- Track name with inline editing -->
                                             <Grid Grid.Column="0" MouseDown="TrackName_MouseDown" Cursor="Hand" VerticalAlignment="Center" Margin="0,0,8,0">
-                                                <TextBlock Text="{Binding Name}" Foreground="#e0e0e0"
+                                                <TextBlock x:Name="TrackNameTextBlock" Text="{Binding Name}" Foreground="#e0e0e0"
                                                            VerticalAlignment="Center" FontSize="12"
                                                            TextTrimming="CharacterEllipsis"
                                                            ToolTip="{Binding Name}"/>
                                             </Grid>
 
-                                            <!-- Lock toggle (fixed: correct icons and white when locked) -->
+                                            <!-- Lock toggle (locked=closed lock, unlocked=open lock) -->
                                             <ToggleButton Grid.Column="1" Width="28" Height="28"
                                                           IsChecked="{Binding IsEnabled}"
                                                           Background="#4a4a4a"
@@ -156,13 +124,13 @@
                                                                             <Path.Style>
                                                                                 <Style TargetType="Path">
                                                                                     <Style.Triggers>
-                                                                                        <!-- IsEnabled=True -> unlocked (open lock) -->
-                                                                                        <DataTrigger Binding="{Binding IsEnabled}" Value="True">
-                                                                                            <Setter Property="Data" Value="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>
-                                                                                        </DataTrigger>
                                                                                         <!-- IsEnabled=False -> locked (closed lock) -->
                                                                                         <DataTrigger Binding="{Binding IsEnabled}" Value="False">
                                                                                             <Setter Property="Data" Value="M18,8H17V6A5,5 0 0,0 12,1A5,5 0 0,0 7,6V8H6A2,2 0 0,0 4,10V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V10A2,2 0 0,0 18,8M12,17A2,2 0 0,1 10,15A2,2 0 0,1 12,13A2,2 0 0,1 14,15A2,2 0 0,1 12,17M15.73,9H8.27V6C8.27,4.39 9.5,3.12 11.11,3.03C11.32,3.01 11.53,3 11.75,3C12.2,3 12.63,3.07 13.03,3.2C14.31,3.62 15.28,4.7 15.6,6.04C15.68,6.34 15.73,6.66 15.73,7V9Z"/>
+                                                                                        </DataTrigger>
+                                                                                        <!-- IsEnabled=True -> unlocked (open lock) -->
+                                                                                        <DataTrigger Binding="{Binding IsEnabled}" Value="True">
+                                                                                            <Setter Property="Data" Value="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>
                                                                                         </DataTrigger>
                                                                                     </Style.Triggers>
                                                                                 </Style>
@@ -214,6 +182,44 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <!-- Add track button at bottom of headers -->
+                        <Border Height="24" Background="#3c3c3c" BorderBrush="#555555" BorderThickness="0,0,1,1">
+                            <Grid Margin="10,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="36"/>
+                                    <ColumnDefinition Width="36"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="2" Width="28" Height="28"
+                                        Content="+"
+                                        Command="{Binding DataContext.AddTrackCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        Background="#4a4a4a"
+                                        ToolTip="トラックを追加">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}"
+                                                                Width="28" Height="28">
+                                                            <Path Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
+                                                                  Fill="White" Width="16" Height="16"
+                                                                  Stretch="Uniform"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#5a5a5a"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
@@ -254,93 +260,85 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border Height="24" BorderBrush="#555555" BorderThickness="1,0,1,1">
-                                                <Grid>
-                                                    <Grid.Style>
-                                                        <Style TargetType="Grid">
-                                                            <Setter Property="Background" Value="Transparent"/>
-                                                            <Style.Triggers>
-                                                                <Trigger Property="ItemsControl.AlternationIndex" Value="0">
-                                                                    <Setter Property="Background" Value="#333333"/>
-                                                                </Trigger>
-                                                                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                                                    <Setter Property="Background" Value="#2b2b2b"/>
-                                                                </Trigger>
-                                                                <!-- White background when locked (IsEnabled=False) -->
-                                                                <DataTrigger Binding="{Binding IsEnabled}" Value="False">
-                                                                    <Setter Property="Background" Value="#666666"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Grid.Style>
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding ItemsControl.AlternationIndex, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="0">
+                                                                <Setter Property="Background" Value="#333333"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding ItemsControl.AlternationIndex, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="1">
+                                                                <Setter Property="Background" Value="#2b2b2b"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsEnabled}" Value="False">
+                                                                <Setter Property="Background" Value="#666666"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid Background="Transparent">
 
-                                                    <!-- Track timeline -->
-                                                    <Border BorderBrush="#555555" BorderThickness="0,0,0,1"
-                                                            Opacity="{Binding IsVisible, Converter={StaticResource BoolToOpacityConverter}}">
-                                                        <Grid>
+                                                    <!-- Timeline blocks background -->
+                                                    <Border BorderBrush="#555555" BorderThickness="0,0,0,1" Height="28"
+                                                            Opacity="{Binding IsVisible, Converter={StaticResource BoolToOpacityConverter}}"/>
 
-                                                            <!-- Vertical grid lines -->
-                                                            <Canvas x:Name="GridCanvas">
-                                                                <Line X1="0" Y1="0" X2="0" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="100" Y1="0" X2="100" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="200" Y1="0" X2="200" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="300" Y1="0" X2="300" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="400" Y1="0" X2="400" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="500" Y1="0" X2="500" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="600" Y1="0" X2="600" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="700" Y1="0" X2="700" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="800" Y1="0" X2="800" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="900" Y1="0" X2="900" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                                <Line X1="1000" Y1="0" X2="1000" Y2="48" Stroke="#444444" StrokeThickness="1"/>
-                                                            </Canvas>
-
-                                                            <!-- Timeline blocks -->
-                                                            <ItemsControl ItemsSource="{Binding Items}">
-                                                                <ItemsControl.ItemsPanel>
-                                                                    <ItemsPanelTemplate>
-                                                                        <Canvas/>
-                                                                    </ItemsPanelTemplate>
-                                                                </ItemsControl.ItemsPanel>
+                                                    <!-- Timeline blocks container (same width as timeline) -->
+                                                    <ItemsControl ItemsSource="{Binding Items}" Margin="0" Padding="0">
+                                                        <ItemsControl.Width>
+                                                            <MultiBinding Converter="{StaticResource FramesToWidthConverter}">
+                                                                <Binding Path="DataContext.TotalFrames" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                <Binding Path="DataContext.PixelsPerFrame" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                            </MultiBinding>
+                                                        </ItemsControl.Width>
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <Canvas ClipToBounds="True"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemContainerStyle>
+                                                            <Style TargetType="ContentPresenter">
+                                                                <Setter Property="Canvas.Left">
+                                                                    <Setter.Value>
+                                                                        <MultiBinding Mode="TwoWay" Converter="{StaticResource FramesToWidthConverter}">
+                                                                            <Binding Path="StartFrame" Mode="TwoWay"/>
+                                                                            <Binding Path="DataContext.PixelsPerFrame" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                        </MultiBinding>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </Style>
+                                                        </ItemsControl.ItemContainerStyle>
                                                                 <ItemsControl.ItemTemplate>
                                                                     <DataTemplate>
-                                                                        <Grid Height="20" MinWidth="80">
-                                                                            <Grid.Width>
+                                                                        <Border Height="22" MinWidth="80"
+                                                                                CornerRadius="3" Padding="4"
+                                                                                MouseDown="Block_MouseDown"
+                                                                                MouseMove="Block_MouseMove"
+                                                                                MouseUp="Block_MouseUp"
+                                                                                x:Name="BlockBorder"
+                                                                                Background="{Binding BackgroundColor}"
+                                                                                BorderBrush="#5d8cb3"
+                                                                                BorderThickness="1">
+                                                                            <Border.Width>
                                                                                 <MultiBinding Converter="{StaticResource FramesToWidthConverter}">
                                                                                     <Binding Path="Duration"/>
                                                                                     <Binding Path="DataContext.PixelsPerFrame" ElementName="TimelineViewControl"/>
                                                                                 </MultiBinding>
-                                                                            </Grid.Width>
-                                                                            <Canvas.Left>
-                                                                                <MultiBinding Converter="{StaticResource FramesToWidthConverter}">
-                                                                                    <Binding Path="StartFrame"/>
-                                                                                    <Binding Path="DataContext.PixelsPerFrame" ElementName="TimelineViewControl"/>
-                                                                                </MultiBinding>
-                                                                            </Canvas.Left>
-
-                                                                            <!-- Main block body -->
-                                                                            <Border CornerRadius="3" Padding="4"
-                                                                                    MouseDown="Block_MouseDown"
-                                                                                    MouseMove="Block_MouseMove"
-                                                                                    MouseUp="Block_MouseUp"
-                                                                                    x:Name="BlockBorder">
-                                                                                <Border.Style>
-                                                                                    <Style TargetType="Border">
-                                                                                        <Setter Property="Background" Value="{Binding BackgroundColor}"/>
-                                                                                        <Setter Property="BorderBrush" Value="#5d8cb3"/>
-                                                                                        <Setter Property="BorderThickness" Value="1"/>
-                                                                                        <Style.Triggers>
-                                                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                                                <Setter Property="BorderBrush" Value="#ffffff"/>
-                                                                                                <Setter Property="BorderThickness" Value="3"/>
-                                                                                                <Setter Property="Effect">
-                                                                                                    <Setter.Value>
-                                                                                                        <DropShadowEffect Color="#3b82f6" BlurRadius="10" ShadowDepth="2" Opacity="0.8"/>
-                                                                                                    </Setter.Value>
-                                                                                                </Setter>
-                                                                                            </DataTrigger>
-                                                                                        </Style.Triggers>
-                                                                                    </Style>
-                                                                                </Border.Style>
-                                                                                <Grid>
+                                                                            </Border.Width>
+                                                                            <Border.Style>
+                                                                                <Style TargetType="Border">
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                                            <Setter Property="BorderBrush" Value="#ffffff"/>
+                                                                                            <Setter Property="BorderThickness" Value="3"/>
+                                                                                            <Setter Property="Effect">
+                                                                                                <Setter.Value>
+                                                                                                    <DropShadowEffect Color="#3b82f6" BlurRadius="10" ShadowDepth="2" Opacity="0.8"/>
+                                                                                                </Setter.Value>
+                                                                                            </Setter>
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </Border.Style>
+                                                                            <Grid>
                                                                                     <!-- Waveform visualization for audio blocks -->
                                                                                     <Canvas x:Name="WaveformCanvas"
                                                                                             Visibility="{Binding IsAudioBlock, Converter={StaticResource BoolToVisibilityConverter}}"
@@ -364,50 +362,42 @@
                                                                                                FontSize="13"
                                                                                                FontStretch="Normal"
                                                                                                Visibility="{Binding IsAudioBlock, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+
+                                                                                    <!-- Left resize handle (text blocks only) -->
+                                                                                    <Border Width="6" HorizontalAlignment="Left"
+                                                                                            Cursor="SizeWE" Background="Transparent"
+                                                                                            MouseDown="Block_ResizeLeft_MouseDown"
+                                                                                            MouseMove="Block_Resize_MouseMove"
+                                                                                            MouseUp="Block_Resize_MouseUp">
+                                                                                        <Border.Style>
+                                                                                            <Style TargetType="Border">
+                                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                                                <Style.Triggers>
+                                                                                                    <DataTrigger Binding="{Binding IsAudioBlock}" Value="True">
+                                                                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                                    </DataTrigger>
+                                                                                                </Style.Triggers>
+                                                                                            </Style>
+                                                                                        </Border.Style>
+                                                                                    </Border>
+
+                                                                                    <!-- Right resize handle (text blocks only) -->
+                                                                                    <Border Width="6" HorizontalAlignment="Right"
+                                                                                            Cursor="SizeWE" Background="Transparent"
+                                                                                            MouseDown="Block_ResizeRight_MouseDown"
+                                                                                            MouseMove="Block_Resize_MouseMove"
+                                                                                            MouseUp="Block_Resize_MouseUp">
+                                                                                        <Border.Style>
+                                                                                            <Style TargetType="Border">
+                                                                                                <Setter Property="Visibility" Value="{Binding IsAudioBlock, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                                                                            </Style>
+                                                                                        </Border.Style>
+                                                                                    </Border>
                                                                                 </Grid>
                                                                             </Border>
-
-                                                                            <!-- Left resize handle (text blocks only) -->
-                                                                            <Border Width="6" HorizontalAlignment="Left"
-                                                                                    Cursor="SizeWE" Background="Transparent"
-                                                                                    MouseDown="Block_ResizeLeft_MouseDown"
-                                                                                    MouseMove="Block_Resize_MouseMove"
-                                                                                    MouseUp="Block_Resize_MouseUp">
-                                                                                <Border.Style>
-                                                                                    <Style TargetType="Border">
-                                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                                        <Style.Triggers>
-                                                                                            <DataTrigger Binding="{Binding IsAudioBlock}" Value="True">
-                                                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                                            </DataTrigger>
-                                                                                        </Style.Triggers>
-                                                                                    </Style>
-                                                                                </Border.Style>
-                                                                            </Border>
-
-                                                                            <!-- Right resize handle (text blocks only) -->
-                                                                            <Border Width="6" HorizontalAlignment="Right"
-                                                                                    Cursor="SizeWE" Background="Transparent"
-                                                                                    MouseDown="Block_ResizeRight_MouseDown"
-                                                                                    MouseMove="Block_Resize_MouseMove"
-                                                                                    MouseUp="Block_Resize_MouseUp">
-                                                                                <Border.Style>
-                                                                                    <Style TargetType="Border">
-                                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                                        <Style.Triggers>
-                                                                                            <DataTrigger Binding="{Binding IsAudioBlock}" Value="True">
-                                                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                                            </DataTrigger>
-                                                                                        </Style.Triggers>
-                                                                                    </Style>
-                                                                                </Border.Style>
-                                                                            </Border>
-                                                                        </Grid>
                                                                     </DataTemplate>
                                                                 </ItemsControl.ItemTemplate>
                                                             </ItemsControl>
-                                                        </Grid>
-                                                    </Border>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -415,6 +405,23 @@
                                 </ItemsControl>
                             </Border>
                         </StackPanel>
+
+                        <!-- Grid lines overlay (global, rendered once for all tracks) -->
+                        <Canvas x:Name="GridLinesCanvas" Margin="0,32,0,0" IsHitTestVisible="False">
+                            <ItemsControl ItemsSource="{Binding DataContext.GridLines, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Line X1="{Binding X}" Y1="0" X2="{Binding X}" Y2="9999"
+                                              Stroke="{Binding Color}" StrokeThickness="1"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Canvas>
 
                         <!-- Playhead (current position indicator) -->
                         <Canvas x:Name="PlayheadCanvas" Margin="0,32,0,0" IsHitTestVisible="True"

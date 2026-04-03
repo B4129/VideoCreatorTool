@@ -34,7 +34,7 @@ namespace VideoCreatorWPF.ViewModels
 
         public BlockPropertyViewModel()
         {
-            ApplyCommand = new RelayCommand(_ => ApplyChanges());
+            // ApplyCommand removed - values are now reflected immediately
             FontFamilies = new ObservableCollection<string>
             {
                 "MJoy",
@@ -162,128 +162,192 @@ namespace VideoCreatorWPF.ViewModels
         public string BlockName
         {
             get => _blockName;
-            set => SetProperty(ref _blockName, value);
+            set
+            {
+                if (SetProperty(ref _blockName, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.Name = value;
+                }
+            }
         }
 
         public int StartFrame
         {
             get => _startFrame;
-            set => SetProperty(ref _startFrame, value);
+            set
+            {
+                if (SetProperty(ref _startFrame, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.StartFrame = value;
+                }
+            }
         }
 
         public int Duration
         {
             get => _duration;
-            set => SetProperty(ref _duration, value);
+            set
+            {
+                if (SetProperty(ref _duration, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.Duration = value;
+                }
+            }
         }
 
         public double Volume
         {
             get => _volume;
-            set => SetProperty(ref _volume, value);
+            set
+            {
+                if (SetProperty(ref _volume, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.Volume = value;
+                }
+            }
         }
 
         public double PlaybackSpeed
         {
             get => _playbackSpeed;
-            set => SetProperty(ref _playbackSpeed, value);
+            set
+            {
+                if (SetProperty(ref _playbackSpeed, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.PlaybackSpeed = value;
+                }
+            }
         }
 
         public double Opacity
         {
             get => _opacity;
-            set => SetProperty(ref _opacity, value);
+            set
+            {
+                if (SetProperty(ref _opacity, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.Opacity = value;
+                }
+            }
         }
 
         public bool Loop
         {
             get => _loop;
-            set => SetProperty(ref _loop, value);
+            set
+            {
+                if (SetProperty(ref _loop, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.Loop = value;
+                }
+            }
         }
 
         public bool IsVisible
         {
             get => _isVisible;
-            set => SetProperty(ref _isVisible, value);
+            set
+            {
+                if (SetProperty(ref _isVisible, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.IsVisible = value;
+                }
+            }
         }
 
         // テキストブロック用プロパティ
         public string TextContent
         {
             get => _textContent;
-            set => SetProperty(ref _textContent, value);
+            set
+            {
+                if (SetProperty(ref _textContent, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.Text = value;
+                }
+            }
         }
 
         public string FontFamily
         {
             get => _fontFamily;
-            set => SetProperty(ref _fontFamily, value);
+            set
+            {
+                if (SetProperty(ref _fontFamily, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.FontFamily = value;
+                }
+            }
         }
 
         public int FontSize
         {
             get => _fontSize;
-            set => SetProperty(ref _fontSize, value);
+            set
+            {
+                if (SetProperty(ref _fontSize, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.FontSize = value;
+                }
+            }
         }
 
         public string FontColor
         {
             get => _fontColor;
-            set => SetProperty(ref _fontColor, value);
+            set
+            {
+                if (SetProperty(ref _fontColor, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.FontColor = value;
+                }
+            }
         }
 
         public double PositionX
         {
             get => _positionX;
-            set => SetProperty(ref _positionX, value);
+            set
+            {
+                if (SetProperty(ref _positionX, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.TextPositionX = value;
+                }
+            }
         }
 
         public double PositionY
         {
             get => _positionY;
-            set => SetProperty(ref _positionY, value);
+            set
+            {
+                if (SetProperty(ref _positionY, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.TextPositionY = value;
+                }
+            }
         }
 
         public int FadeInDuration
         {
             get => _fadeInDuration;
-            set => SetProperty(ref _fadeInDuration, value);
+            set
+            {
+                if (SetProperty(ref _fadeInDuration, value))
+                {
+                    if (_selectedBlock != null) _selectedBlock.FadeInDuration = value;
+                }
+            }
         }
 
         public int FadeOutDuration
         {
             get => _fadeOutDuration;
-            set => SetProperty(ref _fadeOutDuration, value);
-        }
-
-        public ICommand ApplyCommand { get; }
-
-        private void ApplyChanges()
-        {
-            if (_selectedBlock != null)
+            set
             {
-                _selectedBlock.Name = BlockName;
-                _selectedBlock.StartFrame = StartFrame;
-                _selectedBlock.Duration = Duration;
-                _selectedBlock.IsVisible = IsVisible;
-                _selectedBlock.FadeInDuration = FadeInDuration;
-                _selectedBlock.FadeOutDuration = FadeOutDuration;
-                _selectedBlock.Volume = Volume;
-                _selectedBlock.PlaybackSpeed = PlaybackSpeed;
-
-                if (_isTextBlock)
+                if (SetProperty(ref _fadeOutDuration, value))
                 {
-                    _selectedBlock.Text = TextContent;
-                    _selectedBlock.FontFamily = FontFamily;
-                    _selectedBlock.FontSize = FontSize;
-                    _selectedBlock.FontColor = FontColor;
-                    _selectedBlock.TextPositionX = PositionX;
-                    _selectedBlock.TextPositionY = PositionY;
-                }
-                else if (_isVideoBlock)
-                {
-                    _selectedBlock.Opacity = Opacity;
-                    _selectedBlock.Loop = Loop;
+                    if (_selectedBlock != null) _selectedBlock.FadeOutDuration = value;
                 }
             }
         }

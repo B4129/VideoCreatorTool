@@ -96,6 +96,15 @@ namespace VideoCreatorWPF.Models
         private string _theme = "Dark";
         private bool _autoSave = true;
         private int _autoSaveInterval = 5;
+        private double _defaultSpeed = 1.0;
+        private double _defaultPitch = 0.0;
+        private double _defaultIntonation = 1.0;
+        private double _defaultVolume = 1.0;
+        private int _defaultStartSilence = 200;
+        private int _defaultEndSilence = 200;
+        private System.Collections.Generic.List<CharacterSettings>? _characters;
+        private System.Collections.Generic.List<InlineIconDictionaryItem>? _inlineIconDictionary;
+        private System.Collections.Generic.List<ShortcutSetting>? _shortcuts;
 
         public string VoiceVoxPath
         {
@@ -144,5 +153,79 @@ namespace VideoCreatorWPF.Models
             get => _autoSaveInterval;
             set => _autoSaveInterval = value;
         }
+
+        public double DefaultSpeed
+        {
+            get => _defaultSpeed;
+            set => _defaultSpeed = value;
+        }
+
+        public double DefaultPitch
+        {
+            get => _defaultPitch;
+            set => _defaultPitch = value;
+        }
+
+        public double DefaultIntonation
+        {
+            get => _defaultIntonation;
+            set => _defaultIntonation = value;
+        }
+
+        public double DefaultVolume
+        {
+            get => _defaultVolume;
+            set => _defaultVolume = value;
+        }
+
+        public int DefaultStartSilence
+        {
+            get => _defaultStartSilence;
+            set => _defaultStartSilence = value;
+        }
+
+        public int DefaultEndSilence
+        {
+            get => _defaultEndSilence;
+            set => _defaultEndSilence = value;
+        }
+
+        public System.Collections.Generic.List<CharacterSettings>? Characters
+        {
+            get => _characters;
+            set => _characters = value;
+        }
+
+        public System.Collections.Generic.List<InlineIconDictionaryItem>? InlineIconDictionary
+        {
+            get => _inlineIconDictionary;
+            set => _inlineIconDictionary = value;
+        }
+
+        public System.Collections.Generic.List<ShortcutSetting>? Shortcuts
+        {
+            get => _shortcuts;
+            set => _shortcuts = value;
+        }
+    }
+
+    public class CharacterSettings
+    {
+        public string Name { get; set; } = "";
+        public string Color { get; set; } = "#3b82f6";
+    }
+
+    public class InlineIconDictionaryItem
+    {
+        public string SearchKey { get; set; } = "";
+        public string ImagePath { get; set; } = "";
+        public double HeightScale { get; set; } = 1.0;
+        public bool IsEnabled { get; set; } = true;
+    }
+
+    public class ShortcutSetting
+    {
+        public string Name { get; set; } = "";
+        public string KeySequence { get; set; } = "";
     }
 }

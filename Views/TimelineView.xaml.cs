@@ -116,14 +116,15 @@ namespace VideoCreatorWPF.Views
             }
 
             _selectedBlock = block;
-            var mousePos = e.GetPosition(this);
-            _dragStartX = (int)mousePos.X;
-            _dragStartY = (int)mousePos.Y;
+            _dragStartX = (int)e.GetPosition(this).X;
+            _dragStartY = (int)e.GetPosition(this).Y;
             _dragStartFrame = block.StartFrame;
             _dragSourceTrack = trackVm;
             _dragTargetTrack = trackVm;
             _isResizing = false;
             _resizeEdge = ResizeEdge.None;
+
+            System.Diagnostics.Debug.WriteLine($"[MouseDown] StartFrame={block.StartFrame}, X={_dragStartX}");
 
             // 左クリックでドラッグ開始（リサイズハンドルでない場合のみ）
             if (e.LeftButton == MouseButtonState.Pressed && !_isResizing)
@@ -135,25 +136,25 @@ namespace VideoCreatorWPF.Views
 
         private void Block_MouseMove(object sender, MouseEventArgs e)
         {
+            if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
+
+            var currentX = (int)e.GetPosition(this).X;
+            var currentY = (int)e.GetPosition(this).Y;
+            var deltaX = currentX - _dragStartX;
+
             // Handle resize (text, audio, video blocks) - priority first
             if (_isResizing && _selectedBlock != null && e.LeftButton == MouseButtonState.Pressed)
             {
-                var currentX = (int)e.GetPosition(this).X;
-                var deltaX = currentX - _dragStartX;
-                System.Diagnostics.Debug.WriteLine($"[Resize MouseMove] Block Type={_selectedBlock.Type}, deltaX={deltaX}, Duration={_selectedBlock.Duration}");
+                var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
+                System.Diagnostics.Debug.WriteLine($"[Resize] Type={_selectedBlock.Type}, deltaX={deltaX}, framesDelta={framesDelta}");
 
                 // ドラッグ中はプレイヘッドをマウス位置に追従
-                var currentMousePos = e.GetPosition(this);
-                UpdatePlayheadToMousePosition(currentMousePos);
-
-                if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
-                var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
+                UpdatePlayheadToMousePosition(e.GetPosition(this));
 
                 if (_resizeEdge == ResizeEdge.Right)
                 {
                     var newDuration = Math.Max(1, _resizeStartDuration + framesDelta);
 
-                    // Apply snap to end frame
                     if (timelineVm.IsSnapEnabled)
                     {
                         var endFrame = _selectedBlock.StartFrame + newDuration;
@@ -163,10 +164,7 @@ namespace VideoCreatorWPF.Views
                     }
 
                     _selectedBlock.Duration = newDuration;
-
-                    // リサイズ中にプレイヘッドをブロックの終端に追従
-                    var resizeEndFrame = _selectedBlock.StartFrame + newDuration;
-                    timelineVm.CurrentFrame = resizeEndFrame;
+                    timelineVm.CurrentFrame = _selectedBlock.StartFrame + newDuration;
                     UpdatePlayheadPosition();
                 }
                 else if (_resizeEdge == ResizeEdge.Left)
@@ -176,7 +174,6 @@ namespace VideoCreatorWPF.Views
 
                     if (newStart >= 0 && (_resizeStartDuration + durationChange) >= 1)
                     {
-                        // Apply snap to start frame
                         if (timelineVm.IsSnapEnabled)
                         {
                             newStart = ApplySnap(newStart, _selectedBlock);
@@ -187,41 +184,30 @@ namespace VideoCreatorWPF.Views
                         {
                             _selectedBlock.StartFrame = newStart;
                             _selectedBlock.Duration = _resizeStartDuration + durationChange;
-
-                            // リサイズ中にプレイヘッドをブロックの開始位置に追従
                             timelineVm.CurrentFrame = newStart;
                             UpdatePlayheadPosition();
                         }
                     }
                 }
-                return; // Exit early if resizing
+                return;
             }
 
-            // Handle drag move (not resizing) - only when dragging and not resizing
+            // Handle drag move
             if (_isDragging && _selectedBlock != null && !_isResizing && e.LeftButton == MouseButtonState.Pressed)
             {
-                var mousePos = e.GetPosition(this);
-                var currentX = (int)mousePos.X;
-                var currentY = (int)mousePos.Y;
-                var deltaX = currentX - _dragStartX;
-
-                if (DataContext is not ViewModels.TimelineViewModel timelineVm) return;
                 var framesDelta = (int)(deltaX / timelineVm.PixelsPerFrame);
-
                 var newFrame = Math.Max(0, _dragStartFrame + framesDelta);
 
-                // Determine target track based on Y position
                 _dragTargetTrack = GetTrackFromYPosition(currentY, _dragSourceTrack);
 
-                // Apply snap if enabled
                 if (timelineVm.IsSnapEnabled)
                 {
                     newFrame = ApplySnap(newFrame, _selectedBlock);
                 }
 
-                _selectedBlock.StartFrame = newFrame;
+                System.Diagnostics.Debug.WriteLine($"[Drag] deltaX={deltaX}, framesDelta={framesDelta}, newFrame={newFrame}");
 
-                // Update UI to show drag target (optional visual feedback)
+                _selectedBlock.StartFrame = newFrame;
                 UpdateDragDropFeedback(currentY);
             }
         }
@@ -645,9 +631,13 @@ namespace VideoCreatorWPF.Views
         // Show inline edit box for track name
         private void ShowTrackNameEditBox(Grid trackNameGrid, ViewModels.TimelineTrackViewModel trackVm)
         {
-            // Find existing TextBlock
-            var textBlock = trackNameGrid.Children.OfType<TextBlock>().FirstOrDefault();
-            if (textBlock == null) return;
+            // Find existing TextBlock by name
+            var textBlock = trackNameGrid.FindName("TrackNameTextBlock") as TextBlock;
+            if (textBlock == null)
+            {
+                System.Diagnostics.Debug.WriteLine("[TrackName] TextBlock not found!");
+                return;
+            }
 
             // Check if edit box already exists
             var editBox = trackNameGrid.Children.OfType<TextBox>().FirstOrDefault();
@@ -709,9 +699,13 @@ namespace VideoCreatorWPF.Views
         private void CancelTrackNameEdit(TextBox editBox, Grid trackNameGrid)
         {
             editBox.Visibility = Visibility.Collapsed;
-            var textBlock = trackNameGrid.FindName("TrackNameTextBlock") as TextBlock;
-            if (textBlock != null)
-                textBlock.Visibility = Visibility.Visible;
+
+            // Hide edit box and show text block
+            foreach (var child in trackNameGrid.Children.OfType<TextBlock>())
+            {
+                child.Visibility = Visibility.Visible;
+                break;
+            }
         }
 
         // Rename button click

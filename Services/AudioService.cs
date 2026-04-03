@@ -17,9 +17,11 @@ namespace VideoCreatorWPF.Services
             {
                 try
                 {
+                    Debug.WriteLine($"[Audio] PlayAudioAsync called: {audioPath}");
+
                     if (!File.Exists(audioPath))
                     {
-                        Debug.WriteLine($"Audio file not found: {audioPath}");
+                        Debug.WriteLine($"[Audio] Audio file not found: {audioPath}");
                         return;
                     }
 
@@ -27,14 +29,17 @@ namespace VideoCreatorWPF.Services
                     StopAudio(audioPath);
 
                     var player = new MediaPlayer();
+
+                    // Open and wait for media
                     player.Open(new Uri(audioPath));
 
-                    // Wait for media to open
                     var timeout = DateTime.Now.AddSeconds(5);
                     while (player.NaturalDuration.TimeSpan == TimeSpan.Zero && DateTime.Now < timeout)
                     {
-                        System.Threading.Thread.Sleep(50);
+                        System.Threading.Thread.Sleep(100);
                     }
+
+                    Debug.WriteLine($"[Audio] Media opened, duration: {player.NaturalDuration.TimeSpan}");
 
                     // Seek to start position if specified
                     if (startPositionSeconds > 0)
@@ -49,9 +54,18 @@ namespace VideoCreatorWPF.Services
                     }
 
                     _players[audioPath] = player;
-                    player.Play();
 
-                    Debug.WriteLine($"[Audio] Playing: {audioPath}");
+                    // Play the audio
+                    player.Play();
+                    Debug.WriteLine($"[Audio] Play() called for: {Path.GetFileName(audioPath)}");
+
+                    // Keep the task alive until playback completes
+                    while (player.Position < player.NaturalDuration.TimeSpan)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                    }
+
+                    Debug.WriteLine($"[Audio] Playback completed: {Path.GetFileName(audioPath)}");
                 }
                 catch (Exception ex)
                 {

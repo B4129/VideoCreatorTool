@@ -51,11 +51,6 @@
                         <MenuItem Header="アイテムパネル"/>
                     </MenuItem>
                     <MenuItem Header="ツール(T)" Padding="10,5">
-                        <MenuItem Header="プロジェクト設定(_P)" Command="{Binding OpenProjectSettingsCommand}"/>
-                        <Separator/>
-                        <MenuItem Header="インラインアイコン辞書(_I)" Click="IconDictionary_Click"/>
-                        <MenuItem Header="キャラクター設定(_C)" Click="CharacterSettings_Click"/>
-                        <MenuItem Header="ショートカット設定(_K)" Click="Shortcuts_Click"/>
                         <MenuItem Header="設定(_G)" Command="{Binding OpenSettingsCommand}"/>
                     </MenuItem>
                     <MenuItem Header="ヘルプ(H)" Padding="10,5">
@@ -148,11 +143,12 @@
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="セリフ" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
                                 <TextBox Text="{Binding BlockProperties.TextContent, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="50" FontSize="11" Padding="6,4" TextWrapping="Wrap" AcceptsReturn="True"
+                                         MinHeight="60" MaxHeight="200" FontSize="11" Padding="6,4" TextWrapping="Wrap" AcceptsReturn="True"
                                          Background="{StaticResource SurfaceBrush}"
                                          Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderBrush="{StaticResource BorderBrush}"
-                                         VerticalContentAlignment="Top"/>
+                                         VerticalContentAlignment="Top"
+                                         TextChanged="SubtitleText_TextChanged"/>
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,10">
@@ -328,25 +324,13 @@
                                          VerticalContentAlignment="Center"/>
                             </StackPanel>
                         </StackPanel>
-
-                        <!-- Apply button -->
-                        <Button Content="適用" Command="{Binding BlockProperties.ApplyCommand}"
-                                Height="36" FontSize="12" Margin="0,16,0,0"
-                                Background="{StaticResource PrimaryBrush}" Foreground="White"
-                                BorderThickness="0" Cursor="Hand"/>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
         </Border>
 
-        <!-- Status log bar -->
-        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="15,6">
-            <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextSecondaryBrush}"
-                       FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
-        </Border>
-
         <!-- Bottom subtitle input bar -->
-        <Border Grid.Row="3" Grid.ColumnSpan="2" Background="{StaticResource AcrylicSurface}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="15,12">
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Background="{StaticResource AcrylicSurface}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="15,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="160"/>
@@ -424,6 +408,20 @@
                             Background="{StaticResource PrimaryDarkBrush}" Foreground="White"
                             BorderThickness="0" Cursor="Hand"/>
                 </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Status bar (bottom) -->
+        <Border Grid.Row="3" Grid.ColumnSpan="2" Background="#1f1f23" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="15,6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="11" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding AppVersion}" Foreground="{StaticResource TextSecondaryBrush}"
+                           FontSize="10" VerticalAlignment="Center" Margin="10,0,0,0"/>
             </Grid>
         </Border>
 

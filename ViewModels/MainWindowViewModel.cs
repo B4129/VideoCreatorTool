@@ -27,6 +27,9 @@ namespace VideoCreatorWPF.ViewModels
         private BlockPropertyViewModel _blockProperties = new();
         private AppSettings _settings = new();
 
+        // Version information
+        public string AppVersion { get; } = GetAppVersion();
+
         public MainWindowViewModel()
         {
             _settings = new AppSettings();
@@ -348,6 +351,24 @@ namespace VideoCreatorWPF.ViewModels
         public void Dispose()
         {
             _autoSaveService?.Dispose();
+        }
+
+        /// <summary>
+        /// アプリケーションのバージョン情報を取得
+        /// </summary>
+        private static string GetAppVersion()
+        {
+            try
+            {
+                var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                var version = assembly.GetName().Version;
+                if (version != null)
+                {
+                    return $"v{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
+                }
+            }
+            catch { }
+            return "v0.0.0.0";
         }
     }
 }

@@ -114,27 +114,34 @@
 
             <!-- Removed: Preview settings toolbar -->
 
-            <!-- Playback controls (seek bar moved to TimelineView) -->
-            <Border Grid.Row="1" Background="#27272a" BorderBrush="#3f3f46" BorderThickness="0,1,0,0">
+            <!-- Seek bar overlay at bottom of preview -->
+            <Border Grid.Row="0" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                    Background="#80000000" Padding="15,8" Margin="0,0,0,40">
                 <Grid>
-                    <!-- Playback buttons - centered -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Button Content="⏮" Click="RestartButton_Click" Width="50" Height="40"
-                                Background="Transparent" BorderThickness="1" BorderBrush="#3f3f46"
-                                Foreground="White" FontSize="18" Cursor="Hand" ToolTip="最初に戻る"/>
-                        <Button x:Name="PlayPauseButton" Content="▶" Click="PlayPauseButton_Click" Width="50" Height="40"
-                                Background="Transparent" BorderThickness="1" BorderBrush="#3f3f46"
-                                Foreground="White" FontSize="18" Cursor="Hand" ToolTip="再生"/>
-                        <Button Content="⏹" Click="StopButton_Click" Width="50" Height="40"
-                                Background="Transparent" BorderThickness="1" BorderBrush="#3f3f46"
-                                Foreground="White" FontSize="18" Cursor="Hand" ToolTip="停止"/>
-                    </StackPanel>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Frame counter -->
-                    <TextBlock Text="{Binding CurrentFrame, StringFormat='Frame: {0}'}"
-                               Foreground="#a1a1aa" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                    <!-- Current position -->
+                    <TextBlock Grid.Column="0" Text="{Binding CurrentPositionText}" Foreground="White"
+                               VerticalAlignment="Center" Margin="0,0,10,0" FontSize="12" FontWeight="Bold" Width="50"/>
+
+                    <!-- Seek slider -->
+                    <Slider x:Name="PreviewSeekSlider" Grid.Column="1" Height="22"
+                            Minimum="0" Maximum="{Binding TotalFrames}"
+                            Value="{Binding CurrentFrame, Mode=TwoWay}"
+                            TickFrequency="1" IsSnapToTickEnabled="False"
+                            ValueChanged="PreviewSeekSlider_ValueChanged"/>
+
+                    <!-- Duration -->
+                    <TextBlock Grid.Column="2" Text="{Binding DurationText}" Foreground="White"
+                               VerticalAlignment="Center" Margin="10,0,0,0" FontSize="12" Width="50"/>
                 </Grid>
             </Border>
+
+            <!-- Playback controls (removed) -->
         </Grid>
     </Border>
 </UserControl>

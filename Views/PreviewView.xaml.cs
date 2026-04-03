@@ -248,7 +248,6 @@ namespace VideoCreatorWPF.Views
             // Reset to beginning when video ends
             VideoPlayer.Position = TimeSpan.Zero;
             _isPlaying = false;
-            PlayPauseButton.Content = "▶";
             StopPositionTimer();
             if (DataContext is ViewModels.PreviewViewModel viewModel)
             {
@@ -428,7 +427,7 @@ namespace VideoCreatorWPF.Views
             VideoPlayer.Stop();
             VideoPlayer.Position = TimeSpan.Zero;
             _isPlaying = false;
-            PlayPauseButton.Content = "▶";
+            // PlayPauseButton removed
             if (DataContext is ViewModels.PreviewViewModel viewModel)
             {
                 viewModel.CurrentPosition = 0;
@@ -441,7 +440,7 @@ namespace VideoCreatorWPF.Views
             // Return to beginning without playing
             VideoPlayer.Position = TimeSpan.Zero;
             _isPlaying = false;
-            PlayPauseButton.Content = "▶";
+            // PlayPauseButton removed
             StopPositionTimer();
             if (DataContext is ViewModels.PreviewViewModel viewModel)
             {
@@ -455,7 +454,7 @@ namespace VideoCreatorWPF.Views
             VideoPlayer.Stop();
             VideoPlayer.Position = TimeSpan.Zero;
             _isPlaying = false;
-            PlayPauseButton.Content = "▶";
+            // PlayPauseButton removed
             StopPositionTimer();
             if (DataContext is ViewModels.PreviewViewModel viewModel)
             {
@@ -464,35 +463,28 @@ namespace VideoCreatorWPF.Views
             }
         }
 
-        private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
+        private void PreviewSeekSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (VideoPlayer.Source == null) return;
+            // Seek to the new position when slider value changes
+            if (Window.GetWindow(this) is MainWindow mainWindow &&
+                DataContext is ViewModels.PreviewViewModel vm)
+            {
+                var newFrame = (int)e.NewValue;
+                vm.CurrentFrame = newFrame;
 
-            // Check if video is at end, restart from beginning
-            if (VideoPlayer.NaturalDuration.HasTimeSpan && VideoPlayer.Position >= VideoPlayer.NaturalDuration.TimeSpan)
-            {
-                VideoPlayer.Position = TimeSpan.Zero;
-                VideoPlayer.Play();
-                _isPlaying = true;
-                PlayPauseButton.Content = "⏸";
-                StartPositionTimer();
-                return;
-            }
+                // Update video position if playing
+                if (VideoPlayer.Source != null && VideoPlayer.NaturalDuration.HasTimeSpan)
+                {
+                    var fps = 30.0;
+                    var positionSeconds = newFrame / fps;
+                    VideoPlayer.Position = TimeSpan.FromSeconds(positionSeconds);
+                }
 
-            // Toggle play/pause based on internal state
-            if (_isPlaying)
-            {
-                VideoPlayer.Pause();
-                _isPlaying = false;
-                PlayPauseButton.Content = "▶";
-                StopPositionTimer();
-            }
-            else
-            {
-                VideoPlayer.Play();
-                _isPlaying = true;
-                PlayPauseButton.Content = "⏸";
-                StartPositionTimer();
+                // Update timeline playhead
+                if (mainWindow.TimelineViewControl.DataContext is ViewModels.TimelineViewModel timelineVm)
+                {
+                    timelineVm.CurrentFrame = newFrame;
+                }
             }
         }
     }
