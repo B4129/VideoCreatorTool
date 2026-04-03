@@ -373,6 +373,14 @@ namespace VideoCreatorWPF.Views
             PlayPauseButton.Content = "▶";
         }
 
+        private void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            VideoPlayer.Stop();
+            VideoPlayer.Position = TimeSpan.Zero;
+            _isPlaying = false;
+            PlayPauseButton.Content = "▶";
+        }
+
         private void PlayPauseButton_Click(object sender, RoutedEventArgs e)
         {
             if (VideoPlayer.Source == null) return;

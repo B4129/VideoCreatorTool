@@ -15,12 +15,15 @@ namespace VideoCreatorWPF.Views
         private TimelineBlock? _selectedBlock;
         private bool _isDragging;
         private int _dragStartX;
+        private int _dragStartY;
         private int _dragStartFrame;
         private bool _isResizing;
         private ResizeEdge _resizeEdge;
         private int _resizeStartDuration;
         private bool _isDraggingPlayhead;
         private const int FramesPerPixel = 10;
+        private ViewModels.TimelineTrackViewModel? _dragSourceTrack;
+        private ViewModels.TimelineTrackViewModel? _dragTargetTrack;
 
         public TimelineView()
         {
@@ -56,8 +59,12 @@ namespace VideoCreatorWPF.Views
             }
 
             _selectedBlock = block;
-            _dragStartX = (int)e.GetPosition(this).X;
+            var mousePos = e.GetPosition(this);
+            _dragStartX = (int)mousePos.X;
+            _dragStartY = (int)mousePos.Y;
             _dragStartFrame = block.StartFrame;
+            _dragSourceTrack = trackVm;
+            _dragTargetTrack = trackVm;
             _isDragging = true;
             _isResizing = false;
             _resizeEdge = ResizeEdge.None;
@@ -69,19 +76,30 @@ namespace VideoCreatorWPF.Views
             // Handle drag move (not resizing)
             if (_isDragging && !_isResizing && _selectedBlock != null && e.LeftButton == MouseButtonState.Pressed)
             {
-                var currentX = (int)e.GetPosition(this).X;
+                var mousePos = e.GetPosition(this);
+                var currentX = (int)mousePos.X;
+                var currentY = (int)mousePos.Y;
                 var deltaX = currentX - _dragStartX;
                 var framesDelta = deltaX / FramesPerPixel;
 
                 var newFrame = Math.Max(0, _dragStartFrame + framesDelta);
 
-                // Apply snap if enabled
-                if (DataContext is ViewModels.TimelineViewModel timelineVm && timelineVm.IsSnapEnabled)
+                // Determine target track based on Y position
+                if (DataContext is ViewModels.TimelineViewModel timelineVm)
                 {
-                    newFrame = ApplySnap(newFrame, _selectedBlock);
+                    _dragTargetTrack = GetTrackFromYPosition(currentY, _dragSourceTrack);
+
+                    // Apply snap if enabled
+                    if (timelineVm.IsSnapEnabled)
+                    {
+                        newFrame = ApplySnap(newFrame, _selectedBlock);
+                    }
                 }
 
                 _selectedBlock.StartFrame = newFrame;
+
+                // Update UI to show drag target (optional visual feedback)
+                UpdateDragDropFeedback(currentY);
             }
 
             // Handle resize
@@ -137,24 +155,43 @@ namespace VideoCreatorWPF.Views
                 border.ReleaseMouseCapture();
             }
 
-            // Record undo for block move
-            if (_isDragging && _selectedBlock != null && DataContext is ViewModels.TimelineViewModel timelineVm)
+            // Move block to target track if different from source
+            if (_isDragging && _selectedBlock != null && _dragSourceTrack != null && _dragTargetTrack != null)
             {
-                var moveData = new ViewModels.BlockMoveData
+                if (_dragSourceTrack != _dragTargetTrack)
                 {
-                    Block = _selectedBlock,
-                    OldStartFrame = _dragStartFrame,
-                    NewStartFrame = _selectedBlock.StartFrame,
-                    OldDuration = _selectedBlock.Duration,
-                    NewDuration = _selectedBlock.Duration
-                };
-                timelineVm.RecordUndo("MoveBlock", moveData);
+                    // Remove from source track
+                    _dragSourceTrack.Items.Remove(_selectedBlock);
+                    // Add to target track
+                    _selectedBlock.TrackId = _dragTargetTrack.Items.Count > 0 ?
+                        _dragTargetTrack.Items.Last().TrackId : Guid.NewGuid();
+                    _dragTargetTrack.Items.Add(_selectedBlock);
+                }
+
+                // Record undo for block move
+                if (DataContext is ViewModels.TimelineViewModel timelineVm)
+                {
+                    var moveData = new ViewModels.BlockMoveData
+                    {
+                        Block = _selectedBlock,
+                        OldStartFrame = _dragStartFrame,
+                        NewStartFrame = _selectedBlock.StartFrame,
+                        OldDuration = _selectedBlock.Duration,
+                        NewDuration = _selectedBlock.Duration
+                    };
+                    timelineVm.RecordUndo("MoveBlock", moveData);
+                }
+
+                // Clear drag feedback
+                ClearDragDropFeedback();
             }
 
             _isDragging = false;
             _isResizing = false;
             _resizeEdge = ResizeEdge.None;
             _selectedBlock = null;
+            _dragSourceTrack = null;
+            _dragTargetTrack = null;
         }
 
         private void Block_ResizeLeft_MouseDown(object sender, MouseButtonEventArgs e)
@@ -361,6 +398,45 @@ namespace VideoCreatorWPF.Views
             }
 
             return closestFrame;
+        }
+
+        // Get track from Y position for drag-drop between tracks
+        private ViewModels.TimelineTrackViewModel? GetTrackFromYPosition(int yPosition, ViewModels.TimelineTrackViewModel? sourceTrack)
+        {
+            if (DataContext is not ViewModels.TimelineViewModel timelineVm) return sourceTrack;
+
+            // Calculate which track row the mouse is over
+            // Track headers are 48px height, ruler is 32px
+            int timelineStartY = 32 + 48; // Approximate - adjust based on actual layout
+            int trackHeight = 48;
+
+            if (yPosition < timelineStartY + trackHeight / 2)
+            {
+                // Above or in first track
+                return timelineVm.Tracks.FirstOrDefault();
+            }
+
+            // Calculate track index
+            int trackIndex = (yPosition - timelineStartY + trackHeight / 2) / trackHeight;
+            if (trackIndex >= 0 && trackIndex < timelineVm.Tracks.Count)
+            {
+                return timelineVm.Tracks[trackIndex];
+            }
+
+            // Default to last track if beyond
+            return timelineVm.Tracks.LastOrDefault();
+        }
+
+        // Visual feedback for drag-drop (optional - can add highlight overlay)
+        private void UpdateDragDropFeedback(int currentY)
+        {
+            // TODO: Add visual feedback like track highlighting
+            // This would require adding an overlay element to the XAML
+        }
+
+        private void ClearDragDropFeedback()
+        {
+            // TODO: Clear visual feedback
         }
 
         private void DeleteSelectedBlocks(List<TimelineBlock> blocks, ViewModels.TimelineViewModel timelineVm)

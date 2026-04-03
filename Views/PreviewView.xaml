@@ -120,22 +120,8 @@
             <!-- Playback controls -->
             <Border Grid.Row="2" Background="#27272a" BorderBrush="#3f3f46" BorderThickness="0,1,0,0">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Playback buttons -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,10,0">
-                        <Button Content="⏮" Click="RestartButton_Click" Width="40" Height="30"
-                                Background="Transparent" BorderThickness="0" Foreground="White" FontSize="16"/>
-                        <Button x:Name="PlayPauseButton" Content="▶" Click="PlayPauseButton_Click" Width="40" Height="30"
-                                Background="Transparent" BorderThickness="0" Foreground="White" FontSize="16"/>
-                    </StackPanel>
-
-                    <!-- Seek bar -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
+                    <!-- Seek bar - full width -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0">
                         <TextBlock Text="{Binding CurrentPositionText}" Foreground="#a1a1aa"
                                    VerticalAlignment="Center" Margin="0,0,5,0" Width="50" TextAlignment="Right"/>
                         <Slider x:Name="SeekSlider" Width="300" Height="25"
@@ -147,9 +133,22 @@
                                    VerticalAlignment="Center" Margin="5,0,0,0" Width="50"/>
                     </StackPanel>
 
+                    <!-- Playback buttons - centered -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <Button Content="⏮" Click="RestartButton_Click" Width="50" Height="40"
+                                Background="Transparent" BorderThickness="1" BorderBrush="#3f3f46"
+                                Foreground="White" FontSize="18" Cursor="Hand" ToolTip="最初に戻る"/>
+                        <Button x:Name="PlayPauseButton" Content="▶" Click="PlayPauseButton_Click" Width="50" Height="40"
+                                Background="Transparent" BorderThickness="1" BorderBrush="#3f3f46"
+                                Foreground="White" FontSize="18" Cursor="Hand" ToolTip="再生/一時停止"/>
+                        <Button Content="⏹" Click="StopButton_Click" Width="50" Height="40"
+                                Background="Transparent" BorderThickness="1" BorderBrush="#3f3f46"
+                                Foreground="White" FontSize="18" Cursor="Hand" ToolTip="停止"/>
+                    </StackPanel>
+
                     <!-- Frame counter -->
-                    <TextBlock Grid.Column="2" Text="{Binding CurrentFrame, StringFormat='Frame: {0}'}"
-                               Foreground="#a1a1aa" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock Text="{Binding CurrentFrame, StringFormat='Frame: {0}'}"
+                               Foreground="#a1a1aa" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                 </Grid>
             </Border>
         </Grid>
