@@ -375,25 +375,6 @@ namespace VideoCreatorWPF.Views
             }
         }
 
-                            // Set main video player source
-                            VideoPlayer.Source = new Uri(filePath);
-                        }
-                        else
-                        {
-                            System.Diagnostics.Debug.WriteLine("TimelineViewControl DataContext is null");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error adding to timeline: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("MainWindow not found");
-                }
-            }
-        }
 
         private void PreviewGrid_DragOver(object sender, DragEventArgs e)
         {

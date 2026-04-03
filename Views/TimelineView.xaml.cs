@@ -86,15 +86,12 @@ namespace VideoCreatorWPF.Views
                 var newFrame = Math.Max(0, _dragStartFrame + framesDelta);
 
                 // Determine target track based on Y position
-                if (DataContext is ViewModels.TimelineViewModel timelineVm)
-                {
-                    _dragTargetTrack = GetTrackFromYPosition(currentY, _dragSourceTrack);
+                _dragTargetTrack = GetTrackFromYPosition(currentY, _dragSourceTrack);
 
-                    // Apply snap if enabled
-                    if (timelineVm.IsSnapEnabled)
-                    {
-                        newFrame = ApplySnap(newFrame, _selectedBlock);
-                    }
+                // Apply snap if enabled
+                if (timelineVm.IsSnapEnabled)
+                {
+                    newFrame = ApplySnap(newFrame, _selectedBlock);
                 }
 
                 _selectedBlock.StartFrame = newFrame;
@@ -117,7 +114,7 @@ namespace VideoCreatorWPF.Views
                     var newDuration = Math.Max(1, _resizeStartDuration + framesDelta);
 
                     // Apply snap to end frame
-                    if (DataContext is ViewModels.TimelineViewModel timelineVm && timelineVm.IsSnapEnabled)
+                    if (timelineVm.IsSnapEnabled)
                     {
                         var endFrame = _selectedBlock.StartFrame + newDuration;
                         endFrame = ApplySnap(endFrame, _selectedBlock);
@@ -135,7 +132,7 @@ namespace VideoCreatorWPF.Views
                     if (newStart >= 0 && (_resizeStartDuration + durationChange) >= 1)
                     {
                         // Apply snap to start frame
-                        if (DataContext is ViewModels.TimelineViewModel timelineVm && timelineVm.IsSnapEnabled)
+                        if (timelineVm.IsSnapEnabled)
                         {
                             newStart = ApplySnap(newStart, _selectedBlock);
                             durationChange = newStart - _dragStartFrame;
