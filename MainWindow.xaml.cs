@@ -126,24 +126,31 @@ namespace VideoCreatorWPF
                 }
             }
 
-            // Find empty track or track without block at playhead position
+            // Find track where new block won't overlap with existing blocks
             var playheadFrame = timelineVm.CurrentFrame;
             ViewModels.TimelineTrackViewModel? targetTrack = null;
 
+            // Calculate the end frame of the new block we want to add
+            int newBlockEndFrame = playheadFrame + blockDuration;
+
             foreach (var track in timelineVm.Tracks)
             {
-                // Check if track has no block at playhead position
-                var hasBlockAtPosition = track.Items.Any(b =>
-                    playheadFrame >= b.StartFrame && playheadFrame < b.StartFrame + b.Duration);
+                // Check if any existing block overlaps with the new block's time range
+                var hasOverlap = track.Items.Any(b =>
+                {
+                    int existingBlockEndFrame = b.StartFrame + b.Duration;
+                    // Overlap occurs if: newStart < existingEnd AND newEnd > existingStart
+                    return playheadFrame < existingBlockEndFrame && newBlockEndFrame > b.StartFrame;
+                });
 
-                if (!hasBlockAtPosition)
+                if (!hasOverlap)
                 {
                     targetTrack = track;
                     break;
                 }
             }
 
-            // If all tracks have blocks at playhead, create new track
+            // If all tracks have overlapping blocks, create new track
             if (targetTrack == null)
             {
                 timelineVm.AddTrackInternal();
