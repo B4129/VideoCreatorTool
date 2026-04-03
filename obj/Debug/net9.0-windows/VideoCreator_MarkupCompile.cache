@@ -12,9 +12,9 @@ TRACE;DEBUG;HOT_RELOAD;DEBUG;NET;NET9_0;NETCOREAPP;WINDOWS;WINDOWS7_0;NET5_0_OR_
 C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\App.xaml
 122020760142
 
-471788409653
+502019669588
 204-827713357
 MainWindow.xaml;Views\BGMMgmtPanel.xaml;Views\CharacterListView.xaml;Views\ExportDialog.xaml;Views\MediaPoolView.xaml;Views\PreviewView.xaml;Views\ProjectSettingsDialog.xaml;Views\SettingsDialog.xaml;Views\ShortcutsDialog.xaml;Views\SubtitlePropertiesDialog.xaml;Views\SubtitlePropertiesView.xaml;Views\TimelineView.xaml;
 
-False
+True
 

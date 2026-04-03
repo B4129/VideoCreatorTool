@@ -8,7 +8,7 @@ namespace VideoCreatorWPF.Services
 {
     public class AutoSaveService : IDisposable
     {
-        private readonly Timer _timer;
+        private readonly System.Timers.Timer _timer;
         private VideoProject? _currentProject;
         private AppSettings _settings;
         private bool _disposed = false;

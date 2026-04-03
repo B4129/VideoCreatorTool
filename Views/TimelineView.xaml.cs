@@ -855,15 +855,19 @@ namespace VideoCreatorWPF.Views
                 var viewportWidth = timelineScrollViewer.ViewportWidth;
                 var currentOffset = timelineScrollViewer.HorizontalOffset;
 
-                // Auto-scroll with margin (start scrolling when playhead is within 150px of edge)
-                var scrollMargin = 150.0;
+                // Auto-scroll with margin (scroll when playhead goes beyond visible area)
+                var scrollMargin = 50.0;
+
+                // Check if playhead is outside visible area
                 if (playheadPosition < currentOffset + scrollMargin)
                 {
+                    // Playhead is off-screen to the left, scroll left
                     timelineScrollViewer.ScrollToHorizontalOffset(Math.Max(0, playheadPosition - scrollMargin));
                 }
                 else if (playheadPosition > currentOffset + viewportWidth - scrollMargin)
                 {
-                    timelineScrollViewer.ScrollToHorizontalOffset(playheadPosition - viewportWidth + scrollMargin);
+                    // Playhead is off-screen to the right, scroll right
+                    timelineScrollViewer.ScrollToHorizontalOffset(Math.Min(playheadPosition - viewportWidth + scrollMargin, timelineScrollViewer.ExtentWidth - viewportWidth));
                 }
             }
         }
