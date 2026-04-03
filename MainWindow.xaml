@@ -22,16 +22,9 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Title bar + Menu bar combined -->
+        <!-- Menu bar -->
         <Border Grid.Row="0" Grid.ColumnSpan="2" Background="{StaticResource AcrylicSurface}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
-            <StackPanel>
-                <!-- Title bar -->
-                <Grid Height="32">
-                    <TextBlock Text="動画作成ツール v1.0" Foreground="{StaticResource TextSecondaryBrush}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
-                </Grid>
-                <!-- Menu bar -->
-                <Menu Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Height="32">
+            <Menu Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" Height="32">
                     <MenuItem Header="ファイル(F)" Padding="10,5">
                         <MenuItem Header="新規プロジェクト(_N)" Command="{Binding NewProjectCommand}" InputGestureText="Ctrl+N"/>
                         <Separator/>
@@ -62,7 +55,6 @@
                         <MenuItem Header="バージョン情報"/>
                     </MenuItem>
                 </Menu>
-            </StackPanel>
         </Border>
 
         <!-- Left panel: MediaPool + Character list -->

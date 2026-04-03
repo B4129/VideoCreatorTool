@@ -117,15 +117,15 @@ namespace VideoCreatorWPF
             // Generate audio asynchronously
             var audioPath = await Services.VoiceVoxService.GenerateAudioFromText(text, speakerId);
 
-            // Get audio duration (30fps, 1/100 scale)
-            int blockDuration = 60; // Default: 2 seconds
+            // Get audio duration (30fps)
+            int blockDuration = 90; // Default: 3 seconds
             if (audioPath != null)
             {
                 var metadata = await Services.MediaMetadataService.GetMetadataAsync(audioPath, Models.MediaType.Audio);
                 if (metadata != null && metadata.Duration.HasValue)
                 {
-                    // Convert seconds to frames: duration * 30fps / 100 scale
-                    blockDuration = (int)(metadata.Duration.Value * 30 * 100 / 100);
+                    // Convert seconds to frames: duration * 30fps
+                    blockDuration = (int)(metadata.Duration.Value * 30);
                 }
             }
 

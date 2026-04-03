@@ -84,12 +84,12 @@ namespace VideoCreatorWPF.Views
                         viewModel.UpdateDuration(durationSeconds);
                     }
 
-                    // Update TimelineViewModel duration (in frames at 30fps, 1/100 scale)
+                    // Update TimelineViewModel duration (in frames at 30fps)
                     if (Window.GetWindow(this) is MainWindow mainWindow &&
                         mainWindow.TimelineViewControl.DataContext is ViewModels.TimelineViewModel timelineVm)
                     {
-                        var totalFrames = (int)(durationSeconds * 30 * 100);
-                        System.Diagnostics.Debug.WriteLine($"Setting total frames: {totalFrames} (from {durationSeconds}s, 1/100 scale)");
+                        var totalFrames = (int)(durationSeconds * 30);
+                        System.Diagnostics.Debug.WriteLine($"Setting total frames: {totalFrames} (from {durationSeconds}s at 30fps)");
                         timelineVm.SetTotalFrames(totalFrames);
                         mainWindow.TimelineViewControl.UpdateRuler(totalFrames);
                     }
@@ -97,8 +97,8 @@ namespace VideoCreatorWPF.Views
                     // Create video block on timeline if pending
                     if (_pendingVideoFilePath != null && _pendingTrackForBlock != null && _pendingTimelineVmForBlock != null && _pendingMainWindowForBlock != null)
                     {
-                        var videoDuration = (int)(durationSeconds * 30 * 100); // 30fps, 1/100 scale
-                        System.Diagnostics.Debug.WriteLine($"Creating video block with duration: {videoDuration} frames (1/100 scale)");
+                        var videoDuration = (int)(durationSeconds * 30); // 30fps
+                        System.Diagnostics.Debug.WriteLine($"Creating video block with duration: {videoDuration} frames (at 30fps)");
 
                         var videoBlock = new Models.TimelineBlock
                         {
@@ -249,8 +249,8 @@ namespace VideoCreatorWPF.Views
 
                             if (durationSeconds.HasValue)
                             {
-                                var videoDuration = (int)(durationSeconds.Value * 30 * 100); // 30fps, 1/100 scale
-                                System.Diagnostics.Debug.WriteLine($"Video duration from Shell API: {durationSeconds}s = {videoDuration} frames (1/100 scale)");
+                                var videoDuration = (int)(durationSeconds.Value * 30); // 30fps
+                                System.Diagnostics.Debug.WriteLine($"Video duration from Shell API: {durationSeconds}s = {videoDuration} frames (at 30fps)");
 
                                 var videoBlock = new Models.TimelineBlock
                                 {
