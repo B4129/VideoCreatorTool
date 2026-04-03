@@ -100,7 +100,6 @@
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="160"/>
-                    <ColumnDefinition Width="200"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="110"/>
                     <ColumnDefinition Width="120"/>
@@ -119,23 +118,8 @@
                     </ComboBox>
                 </StackPanel>
 
-                <!-- Font family -->
-                <StackPanel Grid.Column="1" Margin="0,0,10,0">
-                    <TextBlock Text="フォント" Foreground="{StaticResource TextSecondaryBrush}"
-                               FontSize="11" Margin="0,0,0,3"/>
-                    <ComboBox x:Name="FontFamilyCombo" Height="32" FontSize="12"
-                              SelectionChanged="FontFamily_SelectionChanged"
-                              Background="{StaticResource SurfaceBrush}"
-                              Foreground="{StaticResource TextPrimaryBrush}">
-                        <ComboBoxItem Content="Yu Gothic UI" IsSelected="True"/>
-                        <ComboBoxItem Content="MS Gothic"/>
-                        <ComboBoxItem Content="Meiryo"/>
-                        <ComboBoxItem Content="Arial"/>
-                    </ComboBox>
-                </StackPanel>
-
                 <!-- Subtitle input -->
-                <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                <StackPanel Grid.Column="1" Margin="0,0,10,0">
                     <TextBlock Text="セリフ" Foreground="{StaticResource TextSecondaryBrush}"
                                FontSize="11" Margin="0,0,0,3"/>
                     <TextBox Height="32" FontSize="13" Padding="8,6"
@@ -148,7 +132,7 @@
                 </StackPanel>
 
                 <!-- Add button -->
-                <StackPanel Grid.Column="3" Margin="0,0,10,0">
+                <StackPanel Grid.Column="2" Margin="0,0,10,0">
                     <TextBlock Text="" Foreground="Transparent" FontSize="1" Height="14"/>
                     <Button Content="追加" Height="32" FontSize="13"
                             Background="{StaticResource PrimaryBrush}" Foreground="White"
@@ -157,7 +141,7 @@
                 </StackPanel>
 
                 <!-- Add and seek button -->
-                <StackPanel Grid.Column="4">
+                <StackPanel Grid.Column="3">
                     <TextBlock Text="" Foreground="Transparent" FontSize="1" Height="14"/>
                     <Button Content="追加+シーク" Height="32" FontSize="13"
                             Background="{StaticResource PrimaryDarkBrush}" Foreground="White"
