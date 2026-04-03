@@ -16,6 +16,7 @@ namespace VideoCreatorWPF.ViewModels
         private readonly AppSettings _settings;
         private string _outputPath = "";
         private string _resolutionPreset = "FHD (1920x1080)";
+        private string _exportFormat = "MP4";
         private int _exportWidth = 1920;
         private int _exportHeight = 1080;
         private int _exportFrameRate = 30;
@@ -50,6 +51,28 @@ namespace VideoCreatorWPF.ViewModels
             CalculateRange();
         }
 
+        /// <summary>
+        /// エクスポート形式に応じて出力ファイルの拡張子を更新
+        /// </summary>
+        private void UpdateOutputExtension()
+        {
+            var extension = _exportFormat switch
+            {
+                "MP4" => ".mp4",
+                "MOV" => ".mov",
+                "WebM" => ".webm",
+                "GIF" => ".gif",
+                _ => ".mp4"
+            };
+
+            if (!string.IsNullOrEmpty(_outputPath))
+            {
+                var dir = System.IO.Path.GetDirectoryName(_outputPath);
+                var name = System.IO.Path.GetFileNameWithoutExtension(_outputPath);
+                OutputPath = System.IO.Path.Combine(dir ?? "", name + extension);
+            }
+        }
+
         // Preset commands
         public ICommand SavePresetCommand { get; }
         public ICommand LoadPresetCommand { get; }
@@ -69,6 +92,21 @@ namespace VideoCreatorWPF.ViewModels
                 if (SetProperty(ref _resolutionPreset, value))
                 {
                     UpdateResolutionFromPreset();
+                }
+            }
+        }
+
+        /// <summary>
+        /// エクスポート形式（MP4, MOV, WebM, GIF）
+        /// </summary>
+        public string ExportFormat
+        {
+            get => _exportFormat;
+            set
+            {
+                if (SetProperty(ref _exportFormat, value))
+                {
+                    UpdateOutputExtension();
                 }
             }
         }
@@ -272,7 +310,7 @@ namespace VideoCreatorWPF.ViewModels
                     _exportWidth, _exportHeight, _exportFrameRate,
                     _exportVideoBitrate,
                     _rangeStartFrame, _rangeEndFrame,
-                    _cancelToken.Token);
+                    _cancelToken.Token, _exportFormat);
 
                 IsExporting = false;
                 StatusMessage = result ? "エクスポート完了" : "エクスポート失敗";

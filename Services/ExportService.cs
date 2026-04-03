@@ -15,7 +15,8 @@ namespace VideoCreatorWPF.Services
     {
         public static async Task<bool> ExportVideo(VideoProject project, string outputPath, IProgress<int>? progress = null,
             int? width = null, int? height = null, int? frameRate = null, int videoBitrate = 8000,
-            int startFrame = 0, int? endFrame = null, CancellationToken cancellationToken = default)
+            int startFrame = 0, int? endFrame = null, CancellationToken cancellationToken = default,
+            string format = "MP4")
         {
             try
             {
@@ -27,7 +28,7 @@ namespace VideoCreatorWPF.Services
                 // Build and execute ffmpeg command using FFMpegCore
                 return await ExportWithFfmpegCore(project, outputPath, progress,
                     exportWidth, exportHeight, exportFrameRate, videoBitrate,
-                    startFrame, exportEndFrame, cancellationToken);
+                    startFrame, exportEndFrame, cancellationToken, format);
             }
             catch (Exception ex)
             {
@@ -38,7 +39,7 @@ namespace VideoCreatorWPF.Services
 
         private static async Task<bool> ExportWithFfmpegCore(VideoProject project, string outputPath,
             IProgress<int>? progress, int width, int height, int frameRate, int videoBitrate,
-            int startFrame, int endFrame, CancellationToken cancellationToken)
+            int startFrame, int endFrame, CancellationToken cancellationToken, string format = "MP4")
         {
             var duration = (endFrame - startFrame) / frameRate;
             if (duration <= 0) duration = 1;
@@ -88,15 +89,34 @@ namespace VideoCreatorWPF.Services
                 commandArgs.Append($"{input} ");
             }
 
-            // Output settings
+            // Output settings based on format
             commandArgs.Append($"-r {frameRate} ");
-            commandArgs.Append($"-c:v libx264 -b:v {videoBitrate}k -pix_fmt yuv420p ");
 
-            // Audio output if there are audio inputs
-            var totalAudioInputs = audioInputs.Count + videoInputs.Count + (!string.IsNullOrEmpty(project.BackgroundMusicPath) ? 1 : 0);
-            if (totalAudioInputs > 0)
+            // Set codec based on format
+            var (videoCodec, audioCodec, pixelFormat) = format switch
             {
-                commandArgs.Append($"-c:a aac -b:a 192k ");
+                "MP4" => ("libx264", "aac", "yuv420p"),
+                "MOV" => ("libx264", "aac", "yuv420p"),
+                "WebM" => ("libvpx-vp9", "libopus", "yuv420p"),
+                "GIF" => (null, null, null), // GIF has no audio, special handling
+                _ => ("libx264", "aac", "yuv420p")
+            };
+
+            if (format == "GIF")
+            {
+                // GIF output: no audio, palettegen for better quality
+                commandArgs.Append($"-c:v gif -pix_fmt rgb8 ");
+            }
+            else
+            {
+                commandArgs.Append($"-c:v {videoCodec} -b:v {videoBitrate}k -pix_fmt {pixelFormat} ");
+
+                // Audio output if there are audio inputs
+                var totalAudioInputs = audioInputs.Count + videoInputs.Count + (!string.IsNullOrEmpty(project.BackgroundMusicPath) ? 1 : 0);
+                if (totalAudioInputs > 0)
+                {
+                    commandArgs.Append($"-c:a {audioCodec} -b:a 192k ");
+                }
             }
 
             commandArgs.Append($"-y -shortest \"{outputPath}\"");
