@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "VideoCreator": {
+      "commandName": "Project",
+      "hotReloadEnabled": true,
+      "environmentVariables": {
+        "DOTNET_HOT_RELOAD": "1"
+      }
+    }
+  }
+}

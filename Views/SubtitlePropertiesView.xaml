@@ -1,0 +1,98 @@
+<UserControl x:Class="VideoCreatorWPF.Views.SubtitlePropertiesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:VideoCreatorWPF.Converters"
+             Background="#2d2d30">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="15">
+            <!-- Header -->
+            <TextBlock Text="字幕プロパティ" FontSize="14" Foreground="White"
+                       Margin="0,0,0,15"/>
+
+            <!-- Position -->
+            <TextBlock Text="位置 (%):" Foreground="#cccccc" Margin="0,0,0,5"/>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="30"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="X:" Foreground="#999999" FontSize="10"/>
+                    <TextBox Text="{Binding SelectedBlock.TextPositionX, StringFormat={}{0:F0}}"
+                             Background="#27272a" Foreground="White"
+                             BorderBrush="#3f3f46" Padding="3"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="," VerticalAlignment="Bottom"
+                           HorizontalAlignment="Center" Margin="0,0,0,5"
+                           Foreground="#999999"/>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Y:" Foreground="#999999" FontSize="10"/>
+                    <TextBox Text="{Binding SelectedBlock.TextPositionY, StringFormat={}{0:F0}}"
+                             Background="#27272a" Foreground="White"
+                             BorderBrush="#3f3f46" Padding="3"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Font size -->
+            <TextBlock Text="フォントサイズ:" Foreground="#cccccc" Margin="0,0,0,5"/>
+            <Slider Minimum="8" Maximum="120" Value="{Binding SelectedBlock.FontSize}"
+                    TickFrequency="1" IsSnapToTickEnabled="True"
+                    Margin="0,0,0,15" Background="#27272a"/>
+            <TextBlock Text="{Binding SelectedBlock.FontSize, StringFormat={}{0:F0} px}"
+                       Foreground="#999999" Margin="0,0,0,10"/>
+
+            <!-- Text color -->
+            <TextBlock Text="テキスト色:" Foreground="#cccccc" Margin="0,0,0,5"/>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="40"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding SelectedBlock.TextColor}"
+                         Background="#27272a" Foreground="White"
+                         BorderBrush="#3f3f46" Padding="3"/>
+                <Border Grid.Column="1" Background="{Binding SelectedBlock.TextColor}"
+                        BorderBrush="#3f3f46" BorderThickness="1" Margin="5,0,0,0"/>
+            </Grid>
+
+            <!-- Outline -->
+            <TextBlock Text="縁取り:" Foreground="#cccccc" Margin="0,10,0,5"/>
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="40"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="幅:" Foreground="#999999" FontSize="10"/>
+                    <TextBox Text="{Binding SelectedBlock.TextOutlineWidth, StringFormat={}{0:F1}}"
+                             Background="#27272a" Foreground="White"
+                             BorderBrush="#3f3f46" Padding="3"/>
+                </StackPanel>
+                <Border Grid.Column="1" Background="{Binding SelectedBlock.TextOutlineColor}"
+                        BorderBrush="#3f3f46" BorderThickness="1" Margin="5,18,0,0"/>
+            </Grid>
+
+            <!-- Shadow toggle -->
+            <CheckBox Content="影を付ける" IsChecked="{Binding SelectedBlock.HasShadow}"
+                      Foreground="White" Margin="0,0,0,15"/>
+
+            <!-- Fade in -->
+            <TextBlock Text="フェードイン (フレーム):" Foreground="#cccccc" Margin="0,0,0,5"/>
+            <TextBox Text="{Binding SelectedBlock.FadeInFrames}"
+                     Background="#27272a" Foreground="White"
+                     BorderBrush="#3f3f46" Padding="3" Margin="0,0,0,10"/>
+
+            <!-- Fade out -->
+            <TextBlock Text="フェードアウト (フレーム):" Foreground="#cccccc" Margin="0,0,0,5"/>
+            <TextBox Text="{Binding SelectedBlock.FadeOutFrames}"
+                     Background="#27272a" Foreground="White"
+                     BorderBrush="#3f3f46" Padding="3" Margin="0,0,0,10"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

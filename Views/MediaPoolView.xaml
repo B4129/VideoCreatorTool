@@ -1,0 +1,182 @@
+<UserControl x:Class="VideoCreatorWPF.Views.MediaPoolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignWidth="280" d:DesignHeight="400">
+    <UserControl.Resources>
+        <Style x:Key="FilterToggleButtonStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#cccccc"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <TextBlock Text="{TemplateBinding Content}"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Background" Value="#3b82f6"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#555555"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <Border Background="#2d2d30" BorderBrush="#3f3f46" BorderThickness="0,0,1,0">
+        <DockPanel>
+            <!-- ヘッダー: タイトル + インポートボタン -->
+            <Border DockPanel.Dock="Top" Height="48" Background="#3c3c3c" BorderBrush="#555555" BorderThickness="0,0,0,1">
+                <Grid Margin="12,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="メディアプール" Foreground="White"
+                               VerticalAlignment="Center" FontWeight="Bold" FontSize="15"/>
+                    <Button Grid.Column="1" Content="＋" Width="32" Height="32"
+                            Background="#3b82f6" Foreground="White"
+                            BorderThickness="0" FontSize="16" FontWeight="Bold"
+                            Command="{Binding ImportCommand}"
+                            ToolTip="メディアをインポート"
+                            Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    CornerRadius="4"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#2563eb"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- フィルタータブ -->
+            <Border DockPanel.Dock="Top" Height="40" Background="#333333" BorderBrush="#555555" BorderThickness="0,0,0,1">
+                <StackPanel Orientation="Horizontal" Margin="4,0">
+                    <ToggleButton Content="すべて" Style="{StaticResource FilterToggleButtonStyle}"
+                                  IsChecked="{Binding IsAllFilterChecked, Mode=TwoWay}"
+                                  x:Name="AllFilterButton"/>
+                    <ToggleButton Content="動画" Style="{StaticResource FilterToggleButtonStyle}"
+                                  Command="{Binding SetFilterCommand}" CommandParameter="Video"/>
+                    <ToggleButton Content="画像" Style="{StaticResource FilterToggleButtonStyle}"
+                                  Command="{Binding SetFilterCommand}" CommandParameter="Image"/>
+                    <ToggleButton Content="音声" Style="{StaticResource FilterToggleButtonStyle}"
+                                  Command="{Binding SetFilterCommand}" CommandParameter="Audio"/>
+                </StackPanel>
+            </Border>
+
+            <!-- メディア一覧 -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Padding="4">
+                <ItemsControl ItemsSource="{Binding MediaItems}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="120" Height="140" Margin="5"
+                                    Background="#3c3c3c"
+                                    BorderBrush="#555555" BorderThickness="1"
+                                    Cursor="Hand">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="BorderBrush" Value="#3b82f6"/>
+                                                <Setter Property="BorderThickness" Value="2"/>
+                                            </DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#4a4a4a"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid Margin="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="85"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- サムネイル -->
+                                    <Border Grid.Row="0" Background="#1a1a1a"
+                                            ClipToBounds="True">
+                                        <Grid>
+                                            <!-- Play icon for video -->
+                                            <TextBlock Text="▶" Foreground="White" FontSize="28"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IsVideo, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <!-- Image icon -->
+                                            <TextBlock Text="🖼" Foreground="White" FontSize="28"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IsImage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <!-- Audio icon -->
+                                            <TextBlock Text="♪" Foreground="White" FontSize="28"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Visibility="{Binding IsAudio, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <!-- Thumbnail image (when available) -->
+                                            <Image Source="{Binding Thumbnail}" Stretch="Uniform"
+                                                   Visibility="{Binding HasThumbnail, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- ファイル名 -->
+                                    <TextBlock Grid.Row="1" Text="{Binding DisplayName}"
+                                               Foreground="#cccccc" FontSize="12"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="5,5,5,0" Height="22"
+                                               ToolTip="{Binding FullDisplayName}"/>
+
+                                    <!-- 長さ/情報 -->
+                                    <TextBlock Grid.Row="2" Text="{Binding DurationText}"
+                                               Foreground="#888888" FontSize="10"
+                                               Margin="5,0,5,4" Height="16"/>
+                                </Grid>
+
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick"
+                                                  Command="{Binding DataContext.SelectItemCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}"
+                                                  CommandParameter="{Binding}"/>
+                                    <MouseBinding MouseAction="RightClick"
+                                                  Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource FindAncestor, AncestorType=ItemsControl}}"
+                                                  CommandParameter="{Binding}"/>
+                                </Border.InputBindings>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </DockPanel>
+    </Border>
+</UserControl>

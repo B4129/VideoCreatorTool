@@ -1,0 +1,90 @@
+<Window x:Class="VideoCreatorWPF.Views.ProjectSettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="プロジェクト設定" Height="400" Width="500"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="60"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" Padding="20">
+            <StackPanel>
+                <!-- Project Name -->
+                <TextBlock Text="プロジェクト名" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,5"/>
+                <TextBox Text="{Binding ProjectName}" Background="{StaticResource SurfaceBrush}"
+                         Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,15" Padding="8,5"/>
+
+                <!-- Resolution Presets -->
+                <TextBlock Text="解像度プリセット" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,5"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                    <Button Content="4K" Command="{Binding ApplyPresetCommand}" CommandParameter="4K"
+                            Margin="0,0,8,0" Padding="12,5"/>
+                    <Button Content="FHD" Command="{Binding ApplyPresetCommand}" CommandParameter="FHD"
+                            Margin="0,0,8,0" Padding="12,5"/>
+                    <Button Content="HD" Command="{Binding ApplyPresetCommand}" CommandParameter="HD"
+                            Margin="0,0,8,0" Padding="12,5"/>
+                    <Button Content="9:16" Command="{Binding ApplyPresetCommand}" CommandParameter="Vertical9:16"
+                            Padding="12,5"/>
+                </StackPanel>
+
+                <!-- Custom Resolution -->
+                <TextBlock Text="カスタム解像度" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,5"/>
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Text="{Binding Width}" Background="{StaticResource SurfaceBrush}"
+                             Foreground="{StaticResource TextPrimaryBrush}" Padding="8,5" HorizontalContentAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="×" Margin="10,0" VerticalAlignment="Center"/>
+                    <TextBox Grid.Column="2" Text="{Binding Height}" Background="{StaticResource SurfaceBrush}"
+                             Foreground="{StaticResource TextPrimaryBrush}" Padding="8,5" HorizontalContentAlignment="Center"/>
+                </Grid>
+
+                <!-- Aspect Ratio Display -->
+                <TextBlock Text="アスペクト比" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,5"/>
+                <Border Background="{StaticResource SurfaceBrush}" Padding="10,8" Margin="0,0,0,15" CornerRadius="4">
+                    <TextBlock Text="{Binding AspectRatioText}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14"/>
+                </Border>
+
+                <!-- Frame Rate -->
+                <TextBlock Text="フレームレート (FPS)" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,5"/>
+                <ComboBox Text="{Binding FrameRate}" Background="{StaticResource SurfaceBrush}"
+                          Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,15" Padding="8,5"
+                          IsEditable="True">
+                    <ComboBoxItem Content="24"/>
+                    <ComboBoxItem Content="30"/>
+                    <ComboBoxItem Content="60"/>
+                </ComboBox>
+
+                <!-- Background Color -->
+                <TextBlock Text="背景色" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,5"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="60"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" Text="{Binding BackgroundColor}" Background="{StaticResource SurfaceBrush}"
+                             Foreground="{StaticResource TextPrimaryBrush}" Padding="8,5" Margin="0,0,10,0"/>
+                    <Border Grid.Column="1" Background="{Binding BackgroundColor}" CornerRadius="4" Height="28"/>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Buttons -->
+        <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="20">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="保存" Command="{Binding SaveCommand}"
+                        Background="{StaticResource PrimaryBrush}" Foreground="White"
+                        Width="80" Height="30" Margin="0,0,10,0" BorderThickness="0"/>
+                <Button Content="キャンセル" Command="{Binding CancelCommand}"
+                        Background="{StaticResource BorderBrush}" Foreground="{StaticResource TextPrimaryBrush}"
+                        Width="80" Height="30" BorderThickness="0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
