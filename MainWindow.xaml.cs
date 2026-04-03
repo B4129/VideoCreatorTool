@@ -246,7 +246,7 @@ namespace VideoCreatorWPF
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // UIが完全に描画されるのを待つ
-            await Task.Delay(2000);
+            await Task.Delay(3000);
 
             await Dispatcher.InvokeAsync(() =>
             {
@@ -255,6 +255,9 @@ namespace VideoCreatorWPF
 
                 // docsフォルダ用 - README用スクリーンショット
                 TakeDocScreenshot("screenshot_main");
+
+                // 各コンポーネントのスクリーンショットを撮影
+                TakeComponentScreenshots();
             });
         }
 
@@ -347,6 +350,71 @@ namespace VideoCreatorWPF
             {
                 ViewModel.StatusMessage = $"スクリーンショットエラー: {ex.Message}";
                 System.Diagnostics.Debug.WriteLine($"Doc screenshot error: {ex.Message}");
+            }
+        }
+
+        // 各コンポーネントのスクリーンショットを撮影
+        private void TakeComponentScreenshots()
+        {
+            try
+            {
+                var docsDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\docs";
+                if (!Directory.Exists(docsDir))
+                {
+                    Directory.CreateDirectory(docsDir);
+                }
+
+                // タイムラインビューのスクリーンショット
+                if (TimelineViewControl != null)
+                {
+                    SaveElementScreenshot(TimelineViewControl, "screenshot_timeline");
+                }
+
+                // プレビュービューのスクリーンショット
+                if (PreviewViewControl != null)
+                {
+                    SaveElementScreenshot(PreviewViewControl, "screenshot_preview");
+                }
+
+                ViewModel.StatusMessage = $"コンポーネントスクリーンショット完了";
+            }
+            catch (Exception ex)
+            {
+                ViewModel.StatusMessage = $"コンポーネントスクショエラー: {ex.Message}";
+            }
+        }
+
+        // UI要素のスクリーンショットを撮影して保存
+        private void SaveElementScreenshot(FrameworkElement element, string fileName)
+        {
+            try
+            {
+                var width = (int)element.ActualWidth;
+                var height = (int)element.ActualHeight;
+
+                if (width <= 0 || height <= 0) return;
+
+                var renderTarget = new RenderTargetBitmap(
+                    width, height, 96, 96, PixelFormats.Pbgra32);
+                element.Arrange(new Rect(new Size(width, height)));
+                renderTarget.Render(element);
+
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(renderTarget));
+
+                var docsDir = @"C:\Users\neko3\Desktop\agent\動画作成ツール\VideoCreatorWPF\docs";
+                var filePath = Path.Combine(docsDir, $"{fileName}.png");
+
+                using (var fs = new FileStream(filePath, FileMode.Create))
+                {
+                    encoder.Save(fs);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Component screenshot saved to: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Component screenshot error: {ex.Message}");
             }
         }
 
