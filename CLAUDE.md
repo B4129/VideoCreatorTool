@@ -21,6 +21,12 @@ git push origin develop
 2. ビルド確認
 3. Gitコミット
 4. GitHub push（自動実行）
+5. Issue修正完了後、そのIssueをclose
+
+## Issue管理
+- 修正が完了したIssueは順次closeする
+- GitHub APIまたはgh CLIを使用してclose
+- コミットメッセージにIssue番号を含める（例: `fix: Issue #3 - 問題の説明`）
 
 ## スクリーンショット
 - 機能追加時はdocsフォルダにスクリーンショットを保存
