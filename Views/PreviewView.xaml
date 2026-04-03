@@ -116,7 +116,7 @@
 
             <!-- Seek bar overlay at bottom of preview (hidden by default, shown on hover) -->
             <Border x:Name="SeekBarOverlay" Grid.Row="0" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
-                    Background="#80000000" Padding="15,8" Margin="0,0,0,40">
+                    Background="#80000000" Padding="15,8" Margin="0,0,0,0">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Opacity" Value="0"/>

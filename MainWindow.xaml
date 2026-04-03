@@ -212,20 +212,22 @@
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="フェードイン（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="6,4"
+                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="8,4"
                                          Background="{StaticResource SurfaceBrush}"
                                          Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderBrush="{StaticResource BorderBrush}"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center"
+                                         TextWrapping="NoWrap"/>
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="フェードアウト（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="6,4"
+                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="8,4"
                                          Background="{StaticResource SurfaceBrush}"
                                          Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderBrush="{StaticResource BorderBrush}"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center"
+                                         TextWrapping="NoWrap"/>
                             </StackPanel>
                         </StackPanel>
 
@@ -254,20 +256,22 @@
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="フェードイン（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="6,4"
+                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="8,4"
                                          Background="{StaticResource SurfaceBrush}"
                                          Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderBrush="{StaticResource BorderBrush}"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center"
+                                         TextWrapping="NoWrap"/>
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="フェードアウト（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="6,4"
+                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="8,4"
                                          Background="{StaticResource SurfaceBrush}"
                                          Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderBrush="{StaticResource BorderBrush}"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center"
+                                         TextWrapping="NoWrap"/>
                             </StackPanel>
                         </StackPanel>
 
@@ -311,20 +315,22 @@
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="フェードイン（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="6,4"
+                                <TextBox Text="{Binding BlockProperties.FadeInDuration}" Height="28" FontSize="11" Padding="8,4"
                                          Background="{StaticResource SurfaceBrush}"
                                          Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderBrush="{StaticResource BorderBrush}"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center"
+                                         TextWrapping="NoWrap"/>
                             </StackPanel>
 
                             <StackPanel Margin="0,0,0,10">
                                 <TextBlock Text="フェードアウト（帧数）" Foreground="{StaticResource TextSecondaryBrush}" FontSize="10" Margin="0,0,0,2"/>
-                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="6,4"
+                                <TextBox Text="{Binding BlockProperties.FadeOutDuration}" Height="28" FontSize="11" Padding="8,4"
                                          Background="{StaticResource SurfaceBrush}"
                                          Foreground="{StaticResource TextPrimaryBrush}"
                                          BorderBrush="{StaticResource BorderBrush}"
-                                         VerticalContentAlignment="Center"/>
+                                         VerticalContentAlignment="Center"
+                                         TextWrapping="NoWrap"/>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>

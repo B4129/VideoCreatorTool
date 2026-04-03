@@ -218,17 +218,20 @@ namespace VideoCreatorWPF
                 var track1 = timelineVm.Tracks[i];
                 var track2 = timelineVm.Tracks[i + 1];
 
-                // Check if track1 has any overlap with text block
+                // Check if track1 has any overlap with text block (even slight overlap)
                 var track1HasOverlap = track1.Items.Any(b =>
                 {
                     int existingBlockEndFrame = b.StartFrame + b.Duration;
+                    // Even slight overlap: if the new block's start < existing block's end
+                    // and the new block's end > existing block's start
                     return playheadFrame < existingBlockEndFrame && newBlockEndFrame > b.StartFrame;
                 });
 
-                // Check if track2 has any overlap with audio block
+                // Check if track2 has any overlap with audio block (even slight overlap)
                 var track2HasOverlap = track2.Items.Any(b =>
                 {
                     int existingBlockEndFrame = b.StartFrame + b.Duration;
+                    // Even slight overlap check
                     return playheadFrame < existingBlockEndFrame && newBlockEndFrame > b.StartFrame;
                 });
 
